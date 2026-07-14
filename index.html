@@ -53,6 +53,17 @@ function fmt(n,d){if(d===undefined)d=2;return(n||0).toLocaleString('en-US',{mini
 function fmtP(n){if(!n)return'0.00';if(n>=1000)return fmt(n,2);if(n>=1)return fmt(n,4);return n.toFixed(8).replace(/0+$/,'');}
 function numF(s){return parseFloat(s)||0;}
 function uid(){return Math.random().toString(36).substr(2,9);}
+var __audioCtx=null;
+function getAudioCtx(){
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)return null;
+  if(!__audioCtx){try{__audioCtx=new AC();}catch(e){return null;}}
+  if(__audioCtx.state==='suspended'){try{__audioCtx.resume();}catch(e){}}
+  return __audioCtx;
+}
+document.addEventListener('touchstart',function(){getAudioCtx();},{passive:true});
+document.addEventListener('click',function(){getAudioCtx();});
+
 function timeAgo(ds){
   var d=Math.floor((Date.now()-new Date(ds))/1000);
   if(d<60)return d+'s ago';
@@ -394,12 +405,11 @@ function App(){
 
   function playAlert(type){
     try{
-      var AC=window.AudioContext||window.webkitAudioContext;
-      if(!AC)return;
-      var ctx=new AC();
+      var ctx=getAudioCtx();
+      if(!ctx)return;
       if(type==='chime'){[523,659,784].forEach(function(f,i){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,ctx.currentTime+i*0.2);g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+i*0.2+0.02);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.2+0.4);o.start(ctx.currentTime+i*0.2);o.stop(ctx.currentTime+i*0.2+0.4);});}
       else if(type==='beep'){[0,0.25].forEach(function(d){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='square';o.frequency.value=1000;g.gain.setValueAtTime(0.3,ctx.currentTime+d);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.18);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.18);});}
-      else if(type==='alarm'){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sawtooth';o.frequency.setValueAtTime(400,ctx.currentTime);o.frequency.linearRampToValueAtTime(900,ctx.currentTime+0.5);g.gain.setValueAtTime(0.35,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.55);o.start(ctx.currentTime);o.stop(ctx.currentTime+0.55);}
+      else if(type==='alarm'){for(var k=0;k<4;k++){(function(k){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sawtooth';var t0=ctx.currentTime+k*0.6;o.frequency.setValueAtTime(400,t0);o.frequency.linearRampToValueAtTime(900,t0+0.5);g.gain.setValueAtTime(0.35,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+0.55);o.start(t0);o.stop(t0+0.55);})(k);}if(navigator.vibrate)navigator.vibrate([300,150,300,150,300]);}
       else if(type==='bell'){var o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.type='sine';o2.frequency.value=440;g2.gain.setValueAtTime(0.5,ctx.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.2);o2.start(ctx.currentTime);o2.stop(ctx.currentTime+1.2);}
       if(type==='vibrate'||type==='vibrate_silent'){if(navigator.vibrate)navigator.vibrate([200,100,200,100,200]);}
     }catch(e){}
@@ -439,13 +449,26 @@ function App(){
 
   var fetchNews=useCallback(function(){
     setNLoad(true);
-    fetch('https://cryptopanic.com/api/free/v1/posts/?auth_token=free&public=true&kind=news&filter=rising')
+    fetch('https://api.blockchair.com/news?limit=60&q=language(en)')
       .then(function(r){return r.ok?r.json():null;})
-      .then(function(d){if(d&&d.results&&d.results.length)setNews(d.results.slice(0,50));})
+      .then(function(d){
+        if(d&&d.data&&d.data.length){
+          var mapped=d.data.filter(function(a){return a.title&&a.link;}).map(function(a){
+            var tag=(a.tags||'').split(',')[0]||'';
+            return {title:a.title,url:a.link,source:{title:a.source||'News'},currencies:tag?[{code:tag.trim().slice(0,5).toUpperCase()}]:null,published_at:(a.time||'').replace(' ','T')+'Z',body:a.description||''};
+          });
+          if(mapped.length)setNews(mapped.slice(0,50));
+        }
+      })
       .catch(function(){}).finally(function(){setNLoad(false);});
   },[]);
 
   useEffect(function(){fetchCoins();fetchNews();},[]);
+  useEffect(function(){
+    var pi=setInterval(fetchCoins,90000);
+    var ni=setInterval(fetchNews,300000);
+    return function(){clearInterval(pi);clearInterval(ni);};
+  },[]);
   useEffect(function(){if(toast){var t=setTimeout(function(){setToast(null);},6000);return function(){clearTimeout(t);};}});
 
   /* Shared swipe-down-to-close for bottom sheets */
@@ -1128,7 +1151,7 @@ function App(){
   function AlertsPage(){
     var pals=useState([]);var priceAlerts=pals[0];var setPriceAlerts=pals[1];
     var showForm=useState(false);var afOpen=showForm[0];var setAfOpen=showForm[1];
-    var afc=useState(null);var afCoin=afCoin_=afOpen?useState(null)[0]:null;
+    var afc=useState(null);
     var afcState=useState(null);var afCoinSel=afcState[0];var setAfCoinSel=afcState[1];
     var afp=useState('');var afPrice=afp[0];var setAfPrice=afp[1];
     var afd=useState('above');var afDir=afd[0];var setAfDir=afd[1];
@@ -1233,7 +1256,14 @@ function App(){
 
 
   function ConvertPage(){
-    /* ---- ALL world fiat currencies (ISO 4217 rates vs USD) ---- */
+    var lfx=useState(LS.get('liveFx')||null);var liveFx=lfx[0];var setLiveFx=lfx[1];
+    useEffect(function(){
+      fetch('https://open.er-api.com/v6/latest/USD')
+        .then(function(r){return r.ok?r.json():null;})
+        .then(function(d){if(d&&d.result==='success'&&d.rates){setLiveFx(d.rates);LS.set('liveFx',d.rates);}})
+        .catch(function(){});
+    },[]);
+    /* ---- ALL world fiat currencies (ISO 4217 rates vs USD, live-updated) ---- */
     var ALL_FX={
       USD:1,EUR:0.921,GBP:0.793,JPY:152.4,CHF:0.897,CAD:1.363,AUD:1.547,NZD:1.673,
       SEK:10.41,NOK:10.72,DKK:6.87,SGD:1.352,HKD:7.832,CNY:7.24,TWD:32.1,KRW:1347,
@@ -1258,6 +1288,7 @@ function App(){
       DJF:178,ERN:15.0,GMD:67.3,GNF:8600,LRD:187,SLL:20900,CVE:101,
       STN:22.6,MRU:39.6,KMF:452,BIF:2870,RWF:1280,CDF:2800
     };
+    if(liveFx){Object.keys(ALL_FX).forEach(function(k){if(liveFx[k])ALL_FX[k]=liveFx[k];});}
     var ALL_FLAGS={
       USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',CHF:'🇨🇭',CAD:'🇨🇦',AUD:'🇦🇺',NZD:'🇳🇿',
       SEK:'🇸🇪',NOK:'🇳🇴',DKK:'🇩🇰',SGD:'🇸🇬',HKD:'🇭🇰',CNY:'🇨🇳',TWD:'🇹🇼',KRW:'🇰🇷',
@@ -1747,6 +1778,26 @@ function App(){
 
   function NewsPage(){
     var items=news.length>0?news:FALLBACK;
+    var gfn=useState([]);var gFiatNews=gfn[0];var setGFiatNews=gfn[1];
+    var gsn=useState([]);var gStockNews=gsn[0];var setGStockNews=gsn[1];
+    useEffect(function(){
+      function rss(q,setter){
+        fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://news.google.com/rss/search?q='+q+'&hl=en-GB&gl=GB&ceid=GB:en'))
+          .then(function(r){return r.ok?r.text():null;})
+          .then(function(x){
+            if(!x)return;
+            var doc=new DOMParser().parseFromString(x,'text/xml');
+            var items=Array.prototype.slice.call(doc.querySelectorAll('item')).slice(0,15).map(function(it){
+              function gv(tag){var el=it.getElementsByTagName(tag)[0];return el?el.textContent:'';}
+              var t=gv('title');var ti=t.lastIndexOf(' - ');if(ti>0)t=t.slice(0,ti);
+              return {title:t,source:{title:gv('source')||'News'},url:gv('link')||'#',published_at:gv('pubDate')||new Date().toISOString(),body:''};
+            }).filter(function(n){return n.title;});
+            if(items.length)setter(items);
+          }).catch(function(){});
+      }
+      rss('finance+economy+markets',setGFiatNews);
+      rss('stock+market+today',setGStockNews);
+    },[]);
     var FIAT_NEWS=[
       {title:'Fed Holds Rates Steady Amid Inflation Concerns',source:{title:'Reuters'},_date:'Today',url:'https://reuters.com/markets',body:'The Federal Reserve held interest rates steady at 5.25-5.5%, citing persistent inflation above the 2% target. Chair Powell signaled caution before any cuts.'},
       {title:'UK GDP Grows 0.4% in Q1 2025',source:{title:'BBC Business'},_date:'Today',url:'https://bbc.co.uk/news/business',body:'The UK economy grew 0.4% in the first quarter, beating forecasts of 0.1%. The Office for National Statistics cited strong services sector output.'},
@@ -1805,9 +1856,9 @@ function App(){
         hasMore&&h('button',{onClick:function(){setNewsPage(function(p){return p+1;});},style:{width:'100%',padding:'12px 0',borderRadius:14,background:'#1e293b',border:'1px solid #334155',color:'#22d3ee',fontWeight:700,fontSize:13,cursor:'pointer',marginTop:4}},'Load More'),
         !hasMore&&cryptoItems.length>0&&h('p',{style:{textAlign:'center',fontSize:12,color:'#334155',padding:'12px 0'}},'All articles loaded')),
       newsTab==='fiat'&&h('div',null,
-        FIAT_NEWS.map(function(n,i){return h(NewsCard,{key:i,n:n,i:i,isCrypto:false});})),
+        (gFiatNews.length?gFiatNews:FIAT_NEWS).map(function(n,i){return h(NewsCard,{key:i,n:n,i:i,isCrypto:false});})),
       newsTab==='stocks'&&h('div',null,
-        STOCK_NEWS.map(function(n,i){return h(NewsCard,{key:i,n:n,i:i,isCrypto:false});})));
+        (gStockNews.length?gStockNews:STOCK_NEWS).map(function(n,i){return h(NewsCard,{key:i,n:n,i:i,isCrypto:false});})));
   }
 
     function ShopPage(){

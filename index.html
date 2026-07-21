@@ -183,7 +183,8 @@ function AlertToast(p){
       h('div',{style:{flex:1}},
         h('p',{style:{fontWeight:900,fontSize:15,color:'#fff'}},'Price Alert: '+a.coinName),
         h('p',{style:{fontSize:13,color:'rgba(255,255,255,0.85)',marginTop:2}},(a.symbol||'?').toUpperCase()+' hit '+a.direction+' $'+fmtP(a.targetPrice))),
-      h('button',{onClick:p.onDismiss,style:{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:12,width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'x',size:16,color:'#fff'}))));
+      h('button',{onClick:p.onDismiss,style:{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:12,width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'x',size:16,color:'#fff'}))),
+    a.repeat&&h('button',{onClick:p.onDismiss,style:{width:'100%',marginTop:10,padding:'12px 0',borderRadius:12,background:'rgba(255,255,255,0.95)',border:'none',fontWeight:900,fontSize:14,color:'#0a0f1e',cursor:'pointer'}},'STOP ALARM'));
 }
 
 /* ---- InAppBrowser ---- */
@@ -228,6 +229,11 @@ function AlertSheet(p){
   var s5=useState('chime');var aType=s5[0];var setAType=s5[1];
   var s6=useState(false);var pickerOpen=s6[0];var setPickerOpen=s6[1];
   var s7=useState(false);var testMsg=s7[0];var setTestMsg=s7[1];
+  var s8=useState('once');var repeatMode=s8[0];var setRepeatMode=s8[1];
+  var s9=useState(null);var customAudio=s9[0];var setCustomAudio=s9[1];
+  var s10=useState(null);var customName=s10[0];var setCustomName=s10[1];
+  var repeatRef=useRef(null);
+  function stopRepeat(){if(repeatRef.current){clearInterval(repeatRef.current);repeatRef.current=null;}}
 
   if(!p.open)return null;
 
@@ -255,11 +261,6 @@ function AlertSheet(p){
     }catch(e){return false;}
   }
 
-  var s8=useState('once');var repeatMode=s8[0];var setRepeatMode=s8[1];
-  var s9=useState(null);var customAudio=s9[0];var setCustomAudio=s9[1];
-  var s10=useState(null);var customName=s10[0];var setCustomName=s10[1];
-  var repeatRef=useRef(null);
-  function stopRepeat(){if(repeatRef.current){clearInterval(repeatRef.current);repeatRef.current=null;}}
 
   var alertTypes=[
     {v:'chime',emoji:'🎵',label:'Chime',desc:'3-note'},
@@ -352,11 +353,11 @@ function AlertSheet(p){
             h('button',{onClick:function(){setRepeatMode('once');},style:{flex:1,padding:'7px 0',borderRadius:9,fontSize:11,fontWeight:700,border:'none',background:repeatMode==='once'?'#22d3ee':'#334155',color:repeatMode==='once'?'#0a0f1e':'#64748b',cursor:'pointer'}},'▶ Play Once'),
             h('button',{onClick:function(){setRepeatMode('repeat');},style:{flex:1,padding:'7px 0',borderRadius:9,fontSize:11,fontWeight:700,border:'none',background:repeatMode==='repeat'?'#f59e0b':'#334155',color:repeatMode==='repeat'?'#0a0f1e':'#64748b',cursor:'pointer'}},'🔁 Repeat'))),
         testMsg&&h('p',{style:{fontSize:12,color:'#22d3ee',fontWeight:700,textAlign:'center',marginBottom:6}},String(testMsg)),
-        h('button',{onClick:function(){setTestMsg('▶ Testing...');setTimeout(function(){setTestMsg('');},2000);},style:{width:'100%',padding:'10px 0',borderRadius:12,background:'rgba(34,211,238,0.1)',border:'1px solid rgba(34,211,238,0.3)',color:'#22d3ee',fontWeight:700,fontSize:13,marginBottom:14}},
+        h('button',{onClick:function(){playSound(['marimba','pulse','classic','custom'].indexOf(aType)!==-1?'chime':aType);if(navigator.vibrate)navigator.vibrate([200,100,200]);setTestMsg('▶ Playing '+aType+'...');setTimeout(function(){setTestMsg('');},2000);},style:{width:'100%',padding:'10px 0',borderRadius:12,background:'rgba(34,211,238,0.1)',border:'1px solid rgba(34,211,238,0.3)',color:'#22d3ee',fontWeight:700,fontSize:13,marginBottom:14}},
           'Test Sound'),
         h('button',{onClick:function(){
           if(!selCoin||!targPrice)return;
-          p.onAdd({id:uid(),coinId:selCoin.id,coinName:selCoin.name,symbol:selCoin.symbol,image:selCoin.image,targetPrice:parseFloat(targPrice),direction:dir,type:aType,active:true,triggered:false});
+          p.onAdd({id:uid(),coinId:selCoin.id,coinName:selCoin.name,symbol:selCoin.symbol,image:selCoin.image,targetPrice:parseFloat(targPrice),direction:dir,type:aType,repeat:repeatMode==='repeat',active:true,triggered:false});
           setSelCoin(null);setTargPrice('');setCoinQ('');setPickerOpen(false);
         },style:{width:'100%',padding:'15px 0',borderRadius:16,background:selCoin&&targPrice?'linear-gradient(135deg,#0ea5e9,#3b82f6)':'#334155',border:'none',color:selCoin&&targPrice?'#fff':'#64748b',fontWeight:900,fontSize:15}},
           'Set Alert'))));
@@ -566,6 +567,10 @@ function App(){
   var sss=useState('');var ss=sss[0];var setSs=sss[1];
   var sos=useState(false);var so=sos[0];var setSo=sos[1];
   var cid=useState('bitcoin');var chartId=cid[0];var setChartId=cid[1];
+  var pt2=useState('portfolio');var portTab=pt2[0];var setPortTab=pt2[1];
+  var du2=useState('usd');var donutUnit=du2[0];var setDonutUnit=du2[1];
+  var alarmRef=useRef(null);
+  function stopAlarm(){if(alarmRef.current){clearInterval(alarmRef.current);alarmRef.current=null;}if(navigator.vibrate)navigator.vibrate(0);}
   var scrollRef=useRef(null);
   function showCoinOnChart(id){setPage('market');setChartId(id);setTimeout(function(){if(scrollRef.current)scrollRef.current.scrollTo({top:0,behavior:'smooth'});},50);}
   var ns=useState([]);var news=ns[0];var setNews=ns[1];
@@ -642,7 +647,14 @@ function App(){
             var coin=all.find(function(c){return c.id===a.coinId;});
             if(!coin)return a;
             var hit=(a.direction==='above'&&coin.current_price>=a.targetPrice)||(a.direction==='below'&&coin.current_price<=a.targetPrice);
-            if(hit){setToast(Object.assign({},a));playAlert(a.type);return Object.assign({},a,{triggered:true});}
+            if(hit){
+              setToast(Object.assign({},a));playAlert(a.type);
+              if(a.repeat){
+                if(alarmRef.current)clearInterval(alarmRef.current);
+                alarmRef.current=setInterval(function(){playAlert(a.type);},4000);
+              }
+              return Object.assign({},a,{triggered:true});
+            }
             return a;
           });
           LS.set('alerts',updated);
@@ -690,7 +702,7 @@ function App(){
     var ni=setInterval(fetchNews,300000);
     return function(){clearInterval(pi);clearInterval(ni);};
   },[]);
-  useEffect(function(){if(toast){var t=setTimeout(function(){setToast(null);},6000);return function(){clearTimeout(t);};}});
+  useEffect(function(){if(toast&&!toast.repeat){var t=setTimeout(function(){setToast(null);},6000);return function(){clearTimeout(t);};}});
 
   /* Shared swipe-down-to-close for bottom sheets */
   function swipeClose(closeFn){
@@ -1047,8 +1059,6 @@ function App(){
         h('p',{style:{fontSize:11,color:'#64748b',lineHeight:1.6}},'Signals use real CoinGecko price data. Not a substitute for your own research.')));
   }
   function PortfolioPage(){
-    var ptab=useState('portfolio');var portTab=ptab[0];var setPortTab=ptab[1];
-    var dunit=useState('usd');var donutUnit=dunit[0];var setDonutUnit=dunit[1];
     function upd(id,f,v){setPort(function(prev){return prev.map(function(x){if(x.id!==id)return x;var u=Object.assign({},x);u[f]=v;return u;});});}
     var active=alerts.filter(function(a){return !a.triggered;});
     var done=alerts.filter(function(a){return a.triggered;});
@@ -1094,13 +1104,6 @@ function App(){
             :h('p',{style:{fontSize:12,fontWeight:900,color:'#a78bfa',lineHeight:1}},totalBTC.toFixed(4)),
           h('p',{style:{fontSize:8,color:'#334155',marginTop:2}},donutUnit==='usd'?'tap → BTC':'tap → USD')));
     }
-
-    /* Auto-fetch latest news every time NewsPage mounts (page visit) */
-    useEffect(function(){
-      setNews([]);
-      setNewsPage(0);
-      fetchNews();
-    },[]);
 
     return h('div',null,
       h('div',{style:{display:'flex',gap:4,background:'#1e293b',borderRadius:14,padding:4,marginBottom:12}},
@@ -2488,7 +2491,7 @@ function App(){
   }
 
   return h('div',{style:{position:'fixed',inset:0,background:'#0a0f1e',color:'#f1f5f9',display:'flex',flexDirection:'column',overflow:'hidden'}},
-    h(AlertToast,{alert:toast,onDismiss:function(){setToast(null);}}),
+    h(AlertToast,{alert:toast,onDismiss:function(){stopAlarm();setToast(null);}}),
     openArt&&h(NewsReader,{article:openArt,onClose:function(){setOpenArt(null);},onOpenBrowser:function(url){setBrowserUrl(url);setOpenArt(null);}}),
     browserUrl&&h(InAppBrowser,{url:browserUrl,onClose:function(){setBrowserUrl(null);}}),
     /* Settings overlay */
@@ -2505,7 +2508,7 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.4')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.5')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),
@@ -2516,7 +2519,7 @@ function App(){
         page==='signals'&&h(SignalsPage,null),
         page==='buy'&&h(BuyPage,null),
         page==='futures'&&FuturesPage(),
-        page==='portfolio'&&h(PortfolioPage,null),
+        page==='portfolio'&&PortfolioPage(),
         page==='alerts'&&AlertsPage(),
         page==='convert'&&h(ConvertPage,null),
         page==='news'&&h(NewsPage,null),

@@ -1555,11 +1555,11 @@ function App(){
     var cshOpen=useState(false);var coinSheetOpen=cshOpen[0];var setCoinSheetOpen=cshOpen[1];
     var csq=useState('');var coinSheetQ=csq[0];var setCoinSheetQ=csq[1];
 
-    /* Auto-select USDT→BTC when crypto mode opens */
+    /* Auto-select BTC→USDT when crypto mode opens */
     useEffect(function(){
       if(cryptoMode&&coins.length>0){
-        if(!fromCoin){var usdt=coins.find(function(c){return c.symbol.toLowerCase()==='usdt';});if(usdt)setFromCoin(usdt);}
-        if(!toCoin){var btc=coins.find(function(c){return c.symbol.toLowerCase()==='btc';});if(btc)setToCoin(btc);}
+        if(!fromCoin){var btc=coins.find(function(c){return c.symbol.toLowerCase()==='btc';});if(btc)setFromCoin(btc);}
+        if(!toCoin){var usdt=coins.find(function(c){return c.symbol.toLowerCase()==='usdt';});if(usdt)setToCoin(usdt);}
       }
     },[cryptoMode,coins.length]);
 
@@ -1569,6 +1569,11 @@ function App(){
     var cryptoNumAmt=parseFloat(cryptoAmt)||0;
     var cryptoResult=fromCoin&&toCoin&&toCoin.current_price>0?fromCoin.current_price*cryptoNumAmt/toCoin.current_price:0;
     var cryptoRate=fromCoin&&toCoin&&toCoin.current_price>0?fromCoin.current_price/toCoin.current_price:0;
+    function selectFromCoin(c){
+      setFromCoin(c);
+      var usdt=coins.find(function(x){return x.symbol.toLowerCase()==='usdt';});
+      setToCoin(usdt||toCoin);
+    }
 
     /* Currency picker sheet — fixed-height, no autoFocus to stop bounce */
     function CurrPicker2(p2){
@@ -1902,7 +1907,7 @@ function App(){
                   var isActiveFrom=fromCoin&&fromCoin.id===c.id;
                   var isActiveTo=toCoin&&toCoin.id===c.id;
                   var convRate=fromCoin&&c.current_price>0?fromCoin.current_price/c.current_price:null;
-                  return h('button',{key:c.id,onClick:function(){setToCoin(c);},style:{display:'flex',alignItems:'center',gap:8,background:isActiveTo?'rgba(167,139,250,0.15)':isActiveFrom?'rgba(34,211,238,0.08)':'#1e293b',borderRadius:11,padding:'8px 10px',border:isActiveTo?'1px solid rgba(167,139,250,0.45)':isActiveFrom?'1px solid rgba(34,211,238,0.3)':'1px solid #334155',cursor:'pointer'}},
+                  return h('button',{key:c.id,onClick:function(){selectFromCoin(c);},style:{display:'flex',alignItems:'center',gap:8,background:isActiveTo?'rgba(167,139,250,0.15)':isActiveFrom?'rgba(34,211,238,0.08)':'#1e293b',borderRadius:11,padding:'8px 10px',border:isActiveTo?'1px solid rgba(167,139,250,0.45)':isActiveFrom?'1px solid rgba(34,211,238,0.3)':'1px solid #334155',cursor:'pointer'}},
                     c.image?h('img',{src:c.image,alt:'',style:{width:24,height:24,borderRadius:12,flexShrink:0}}):h('div',{style:{width:24,height:24,borderRadius:12,background:'#334155',flexShrink:0}}),
                     h('span',{style:{fontWeight:700,fontSize:11,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#94a3b8',flexShrink:0}},(c.symbol||'?').toUpperCase()),
                     (function(){var vs='$'+fmtP(c.current_price);return h('span',{style:{flex:1,textAlign:'right',fontWeight:900,fontSize:vs.length>10?11:vs.length>7?13:15,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},vs);})());
@@ -1915,7 +1920,7 @@ function App(){
                 var isActiveFrom=fromCoin&&fromCoin.id===c.id;
                 var isActiveTo=toCoin&&toCoin.id===c.id;
                 var convRate=fromCoin&&c.current_price>0?fromCoin.current_price/c.current_price:null;
-                return h('button',{key:c.id,onClick:function(){setToCoin(c);},style:{display:'flex',alignItems:'center',gap:8,background:isActiveTo?'rgba(167,139,250,0.15)':isActiveFrom?'rgba(34,211,238,0.08)':'#1e293b',borderRadius:11,padding:'8px 10px',border:isActiveTo?'1px solid rgba(167,139,250,0.45)':isActiveFrom?'1px solid rgba(34,211,238,0.3)':'1px solid #334155',cursor:'pointer'}},
+                return h('button',{key:c.id,onClick:function(){selectFromCoin(c);},style:{display:'flex',alignItems:'center',gap:8,background:isActiveTo?'rgba(167,139,250,0.15)':isActiveFrom?'rgba(34,211,238,0.08)':'#1e293b',borderRadius:11,padding:'8px 10px',border:isActiveTo?'1px solid rgba(167,139,250,0.45)':isActiveFrom?'1px solid rgba(34,211,238,0.3)':'1px solid #334155',cursor:'pointer'}},
                   c.image?h('img',{src:c.image,alt:'',style:{width:24,height:24,borderRadius:12,flexShrink:0}}):h('div',{style:{width:24,height:24,borderRadius:12,background:'#334155',flexShrink:0}}),
                   h('span',{style:{fontWeight:700,fontSize:11,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#94a3b8',flexShrink:0}},(c.symbol||'?').toUpperCase()),
                   (function(){var vs=convRate?convRate.toLocaleString('en-US',{maximumFractionDigits:convRate>=100?2:convRate>=1?4:6}):'$'+fmtP(c.current_price);return h('span',{style:{flex:1,textAlign:'right',fontWeight:900,fontSize:vs.length>10?11:vs.length>7?13:15,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},vs);})(),
@@ -2687,7 +2692,7 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.9')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.0')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),

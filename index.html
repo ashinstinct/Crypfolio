@@ -2272,15 +2272,15 @@ function App(){
         function fmt(n){return isNaN(n)?'0':String(Math.round(n*1e10)/1e10);}
 
         if(v==='C') return {disp:'0',op:null,stored:null,fresh:false,expr:''};
-        if(v==='±') return Object.assign({},s,{disp:disp.charAt(0)==='-'?disp.slice(1):'-'+disp});
+        if(v==='\u00b1') return Object.assign({},s,{disp:disp.charAt(0)==='-'?disp.slice(1):'-'+disp});
         if(v==='%') return Object.assign({},s,{disp:fmt(parseFloat(disp)/100)});
         if(v==='DEL') return Object.assign({},s,{disp:disp.length>1?disp.slice(0,-1):'0'});
 
-        if(['+','-','×','÷'].includes(v)){
+        if(['+','-','\u00d7','\u00f7'].includes(v)){
           var cur=parseFloat(disp)||0;
           /* Show running expression: "12 + " */
           if(op&&stored!==null&&!fresh){
-            var r=op==='+'?stored+cur:op==='-'?stored-cur:op==='×'?stored*cur:cur!==0?stored/cur:0;
+            var r=op==='+'?stored+cur:op==='-'?stored-cur:op==='\u00d7'?stored*cur:cur!==0?stored/cur:0;
             var rr=Math.round(r*1e10)/1e10;
             return {disp:fmt(rr),op:v,stored:rr,fresh:true,expr:fmt(rr)+' '+v};
           }
@@ -2290,9 +2290,10 @@ function App(){
         if(v==='='){
           if(op&&stored!==null){
             var cur2=parseFloat(disp)||0;
-            var res=op==='+'?stored+cur2:op==='-'?stored-cur2:op==='×'?stored*cur2:cur2!==0?stored/cur2:0;
+            var res=op==='+'?stored+cur2:op==='-'?stored-cur2:op==='\u00d7'?stored*cur2:cur2!==0?stored/cur2:0;
             var rounded=Math.round(res*1e10)/1e10;
-            return {disp:fmt(rounded),op:null,stored:null,fresh:false,expr:expr+' '+fmt(cur2)+' ='};
+            /* expr already ends with the second operand (built up as it was typed) - just append '=' */
+            return {disp:fmt(rounded),op:null,stored:null,fresh:false,expr:expr+' ='};
           }
           return s;
         }
@@ -2307,14 +2308,14 @@ function App(){
     }
 
     var KEYS=[
-      ['C','±','%','÷'],
-      ['7','8','9','×'],
+      ['C','\u00b1','%','\u00f7'],
+      ['7','8','9','\u00d7'],
       ['4','5','6','-'],
       ['1','2','3','+'],
       ['DEL','0','.','=']
     ];
-    var OPS=['+','-','×','÷'];
-    var UTIL=['C','±','%','DEL'];
+    var OPS=['+','-','\u00d7','\u00f7'];
+    var UTIL=['C','\u00b1','%','DEL'];
 
     var rawDisp=S.disp;
     var dispNum=parseFloat(rawDisp);
@@ -2323,24 +2324,23 @@ function App(){
        rawDisp.indexOf('.')!==-1?
          dispNum.toLocaleString('en-US',{minimumFractionDigits:rawDisp.split('.')[1].length,maximumFractionDigits:10}):
          dispNum.toLocaleString('en-US',{maximumFractionDigits:0}));
+    /* Only show the expression line when it's telling us something the main number alone doesn't
+       (i.e. there's an operator involved, or we just landed on a result) */
+    var showExpr=S.expr&&(S.expr.indexOf('+')!==-1||S.expr.indexOf('-')!==-1||S.expr.indexOf('\u00d7')!==-1||S.expr.indexOf('\u00f7')!==-1);
 
     return h('div',{style:{display:'flex',flexDirection:'column',flex:1,minHeight:0,height:'100%'}},
-      /* Expression shows full running calculation */
-      h('div',{style:{textAlign:'right',padding:'4px 4px 2px',minHeight:20,flexShrink:0}},
-        h('p',{style:{fontSize:13,color:'#475569',fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
-          S.expr||' ')),
-      /* Main display */
-      h('div',{style:{background:'#0a0f1e',borderRadius:18,padding:'12px 16px 10px',marginBottom:8,border:'1px solid #1e293b',textAlign:'right',flexShrink:0}},
+      /* Main display \u2014 the full running calculation is now big and clearly visible, not a tiny corner label */
+      h('div',{style:{background:'#0a0f1e',borderRadius:18,padding:'10px 16px 12px',marginBottom:8,border:'1px solid #1e293b',textAlign:'right',flexShrink:0}},
         h('p',{style:{
-          fontSize:rawDisp.length>10?'min(6vw,24px)':rawDisp.length>7?'min(8vw,32px)':'min(10vw,40px)',
-          fontWeight:900,color:'#22d3ee',lineHeight:1,fontVariantNumeric:'tabular-nums',
-          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'
-        }},dispStr),
-        S.op&&h('div',{style:{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:6,marginTop:5}},
-          h('span',{style:{fontSize:11,color:'#334155'}},'Running:'),
-          h('span',{style:{fontSize:12,fontWeight:700,color:'#60a5fa'}},
-            S.stored!==null?S.stored.toLocaleString('en-US',{maximumFractionDigits:8}):'—'),
-          h('span',{style:{fontSize:15,fontWeight:900,color:'#22d3ee',background:'rgba(34,211,238,0.15)',borderRadius:7,padding:'1px 7px'}},S.op))),
+          fontSize:'clamp(15px,5.5vw,26px)',fontWeight:700,color:'#7dd3fc',lineHeight:1.2,
+          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+          minHeight:showExpr?'1.2em':0,opacity:showExpr?1:0,transition:'opacity 0.1s'
+        }},showExpr?S.expr:'\u00a0'),
+        h('p',{style:{
+          fontSize:rawDisp.length>10?'min(9vw,32px)':rawDisp.length>7?'min(11vw,42px)':'min(13vw,52px)',
+          fontWeight:900,color:'#22d3ee',lineHeight:1.15,fontVariantNumeric:'tabular-nums',
+          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:2
+        }},dispStr)),
       /* Button grid */
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gridTemplateRows:'repeat(5,1fr)',gap:7,flex:1,minHeight:0}},
         KEYS.map(function(row){
@@ -2683,7 +2683,7 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.4')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.5')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),

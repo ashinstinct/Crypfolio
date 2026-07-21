@@ -144,12 +144,28 @@ function StatCard(p){
 }
 
 /* ---- CoinSheet ---- */
+/* Shared swipe-down-to-close for bottom sheets */
+function swipeClose(closeFn){
+  return {
+    onTouchStart:function(e){e.currentTarget._sy=e.touches[0].clientY;e.currentTarget._moved=false;},
+    onTouchMove:function(e){
+      var dy=e.touches[0].clientY-(e.currentTarget._sy||0);
+      if(dy>0){e.currentTarget.style.transform='translateY('+dy+'px)';e.currentTarget._moved=true;}
+    },
+    onTouchEnd:function(e){
+      var dy=parseFloat((e.currentTarget.style.transform||'').replace(/[^\d.]/g,''))||0;
+      if(dy>80){e.currentTarget.style.transform='';closeFn();}
+      else{e.currentTarget.style.transform='';}
+    }
+  };
+}
+
 function CoinSheet(p){
   if(!p.open)return null;
   return h('div',{style:{position:'fixed',inset:0,zIndex:200,display:'flex',flexDirection:'column'}},
     h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.75)'},onClick:p.onClose}),
-    h('div',{className:'sheet',style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',display:'flex',flexDirection:'column',maxHeight:'78vh'}},
-      h('div',{style:{display:'flex',justifyContent:'center',padding:'10px 0 6px'}},h('div',{style:{width:40,height:4,background:'#334155',borderRadius:2}})),
+    h('div',Object.assign({className:'sheet',style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',display:'flex',flexDirection:'column',maxHeight:'78vh',transition:'transform 0.1s'}},swipeClose(p.onClose)),
+      h('div',{style:{display:'flex',justifyContent:'center',padding:'10px 0 6px',cursor:'grab'}},h('div',{style:{width:40,height:4,background:'#334155',borderRadius:2}})),
       h('div',{style:{padding:'4px 16px 12px',flexShrink:0}},
         h('p',{style:{fontSize:16,fontWeight:900,color:'#f1f5f9',marginBottom:12}},p.title),
         h('div',{style:{display:'flex',alignItems:'center',gap:8,background:'#1e293b',borderRadius:14,padding:'10px 14px',border:'1px solid #334155'}},
@@ -838,22 +854,6 @@ function App(){
     return function(){clearInterval(pi);clearInterval(ni);};
   },[]);
   useEffect(function(){if(toast&&!toast.repeat){var t=setTimeout(function(){setToast(null);},6000);return function(){clearTimeout(t);};}});
-
-  /* Shared swipe-down-to-close for bottom sheets */
-  function swipeClose(closeFn){
-    return {
-      onTouchStart:function(e){e.currentTarget._sy=e.touches[0].clientY;e.currentTarget._moved=false;},
-      onTouchMove:function(e){
-        var dy=e.touches[0].clientY-(e.currentTarget._sy||0);
-        if(dy>0){e.currentTarget.style.transform='translateY('+dy+'px)';e.currentTarget._moved=true;}
-      },
-      onTouchEnd:function(e){
-        var dy=parseFloat((e.currentTarget.style.transform||'').replace(/[^\d.]/g,''))||0;
-        if(dy>80){e.currentTarget.style.transform='';closeFn();}
-        else{e.currentTarget.style.transform='';}
-      }
-    };
-  }
 
   function filterCoins(q,excl){
     excl=excl||[];
@@ -2692,7 +2692,7 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.1')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.2')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),

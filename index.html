@@ -2367,12 +2367,19 @@ function App(){
   }
 
   /* Wallet Page */
-  function WalletPage(){
+  function WalletPage(P){
+    var setBrowserUrl=P.setBrowserUrl;
     var wState=useState('disconnected');var wStatus=wState[0];var setWStatus=wState[1];
     var wcUri=useState('');var wcURI=wcUri[0];var setWcURI=wcUri[1];
     var wacc=useState(null);var wAccount=wacc[0];var setWAccount=wacc[1];
     var wchain=useState(null);var wChainId=wchain[0];var setWChainId=wchain[1];
     var wcShow=useState(false);var showWcModal=wcShow[0];var setShowWcModal=wcShow[1];
+    var vo=useState(false);var showViewOnly=vo[0];var setShowViewOnly=vo[1];
+    var vAddr=useState('');var voAddr=vAddr[0];var setVoAddr=vAddr[1];
+    var vErr=useState('');var voErr=vErr[0];var setVoErr=vErr[1];
+    var vLoad=useState(false);var voLoad=vLoad[0];var setVoLoad=vLoad[1];
+    var vBal=useState(null);var voBal=vBal[0];var setVoBal=vBal[1];
+    var seedInfo=useState(false);var showSeedInfo=seedInfo[0];var setShowSeedInfo=seedInfo[1];
 
     /* WalletConnect v2 - Reown AppKit approach
        Per WalletConnect docs: use @reown/appkit which wraps WalletConnect v2 sign protocol.
@@ -2391,7 +2398,13 @@ function App(){
           alert('MetaMask connection declined: '+err.message);
         });
       } else {
-        alert('MetaMask not detected. Please install the MetaMask browser extension or use the MetaMask in-app browser.');
+        var isMobile=/Android|iPhone|iPad/i.test(navigator.userAgent||'');
+        if(isMobile){
+          var dappUrl=window.location.href.replace(/^https?:\/\//,'');
+          window.location.href='https://metamask.app.link/dapp/'+dappUrl;
+        }else{
+          setBrowserUrl&&setBrowserUrl('https://metamask.io/download/');
+        }
       }
     }
 
@@ -2443,6 +2456,60 @@ function App(){
         h(Ico,{name:'loader',size:32,color:'#22d3ee',spin:true}),
         h('p',{style:{color:'#f1f5f9',fontSize:14,fontWeight:700}},'Opening WalletConnect...'),
         h('button',{onClick:function(){setShowWcModal(false);},style:{background:'#1e293b',border:'1px solid #334155',borderRadius:10,padding:'8px 20px',color:'#64748b',fontWeight:700,cursor:'pointer'}},'Cancel')),
+      /* View-only address sheet */
+      showViewOnly&&h('div',{style:{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column'}},
+        h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.8)'},onClick:function(){setShowViewOnly(false);}}),
+        h('div',{style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'20px 16px calc(20px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:12}},
+          h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 6px'}}),
+          h('p',{style:{fontWeight:900,fontSize:16,color:'#f1f5f9'}},'View-Only by Address'),
+          h('p',{style:{fontSize:12,color:'#64748b',lineHeight:1.5}},'Track any public wallet address — Ethereum (0x...) or Bitcoin. No private key or seed phrase needed, ever.'),
+          h('input',{type:'text',value:voAddr,onChange:function(e){setVoAddr(e.target.value.trim());setVoErr('');},placeholder:'0x... or bc1...',autoCapitalize:'off',autoCorrect:'off',style:{width:'100%',background:'#1e293b',border:'1px solid #334155',borderRadius:12,padding:'12px 14px',color:'#f1f5f9',fontSize:13,fontFamily:'monospace',outline:'none'}}),
+          voErr&&h('p',{style:{fontSize:12,color:'#f87171'}},voErr),
+          voBal&&h('div',{style:{background:'#1e293b',borderRadius:12,padding:'12px 14px',border:'1px solid rgba(16,185,129,0.3)'}},
+            h('p',{style:{fontSize:11,color:'#64748b',marginBottom:4}},voBal.chain+' balance'),
+            h('p',{style:{fontSize:20,fontWeight:900,color:'#10b981'}},voBal.amount+' '+voBal.symbol)),
+          h('button',{disabled:voLoad,onClick:function(){
+            var addr=voAddr.trim();
+            if(!addr){setVoErr('Enter an address');return;}
+            setVoErr('');setVoLoad(true);setVoBal(null);
+            if(/^0x[a-fA-F0-9]{40}$/.test(addr)){
+              fetch('https://cloudflare-eth.com',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[addr,'latest'],id:1})})
+                .then(function(r){return r.json();})
+                .then(function(d){
+                  if(d.error)throw new Error(d.error.message||'RPC error');
+                  var wei=parseInt(d.result,16);
+                  var eth=(wei/1e18).toFixed(6);
+                  setVoBal({chain:'Ethereum',amount:eth,symbol:'ETH'});
+                  setWAccount(addr);setWStatus('connected_view');setShowViewOnly(false);
+                })
+                .catch(function(e){setVoErr('Could not fetch balance: '+e.message);})
+                .finally(function(){setVoLoad(false);});
+            }else if(/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(addr)){
+              fetch('https://blockchain.info/rawaddr/'+addr+'?limit=0')
+                .then(function(r){if(!r.ok)throw new Error('Address not found');return r.json();})
+                .then(function(d){
+                  var btc=(d.final_balance/1e8).toFixed(8);
+                  setVoBal({chain:'Bitcoin',amount:btc,symbol:'BTC'});
+                  setWAccount(addr);setWStatus('connected_view');setShowViewOnly(false);
+                })
+                .catch(function(e){setVoErr('Could not fetch balance: '+e.message);})
+                .finally(function(){setVoLoad(false);});
+            }else{
+              setVoErr('Not a recognized Ethereum or Bitcoin address');
+              setVoLoad(false);
+            }
+          },style:{width:'100%',padding:'14px',borderRadius:14,background:voLoad?'#334155':'linear-gradient(135deg,#0ea5e9,#3b82f6)',border:'none',color:voLoad?'#64748b':'#fff',fontWeight:900,fontSize:14,cursor:voLoad?'default':'pointer'}},voLoad?'Looking up...':'Look Up Balance'),
+          h('button',{onClick:function(){setShowViewOnly(false);},style:{width:'100%',padding:'10px',background:'none',border:'none',color:'#64748b',fontWeight:700,fontSize:13}},'Cancel'))),
+      /* Seed-phrase safety sheet (Crypfolio never accepts seed phrases) */
+      showSeedInfo&&h('div',{style:{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column'}},
+        h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.8)'},onClick:function(){setShowSeedInfo(false);}}),
+        h('div',{style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'20px 16px calc(20px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:12}},
+          h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 6px'}}),
+          h('div',{style:{display:'flex',alignItems:'center',gap:10}},h(Ico,{name:'alert',size:20,color:'#f59e0b'}),h('p',{style:{fontWeight:900,fontSize:16,color:'#f1f5f9'}},'Seed Phrase Import Not Offered')),
+          h('p',{style:{fontSize:13,color:'#94a3b8',lineHeight:1.6}},'Crypfolio never asks for or stores your seed phrase. Any app that does is a major theft risk — a 12/24-word phrase gives complete, irreversible control of every asset it protects.'),
+          h('p',{style:{fontSize:13,color:'#94a3b8',lineHeight:1.6}},'To connect real funds, use MetaMask or WalletConnect above — your keys stay in your own wallet app and never pass through Crypfolio. To just watch balances, use View-Only by Address instead.'),
+          h('button',{onClick:function(){setShowSeedInfo(false);setShowViewOnly(true);},style:{width:'100%',padding:'14px',borderRadius:14,background:'linear-gradient(135deg,#0ea5e9,#3b82f6)',border:'none',color:'#fff',fontWeight:900,fontSize:14,cursor:'pointer'}},'Use View-Only Instead'),
+          h('button',{onClick:function(){setShowSeedInfo(false);},style:{width:'100%',padding:'10px',background:'none',border:'none',color:'#64748b',fontWeight:700,fontSize:13}},'Close'))),
       /* Header banner */
       h('div',{style:{background:'linear-gradient(135deg,rgba(16,185,129,0.12),rgba(34,211,238,0.06))',border:'1px solid rgba(16,185,129,0.25)',borderRadius:20,padding:20,marginBottom:14,textAlign:'center'}},
         /* Neon wallet icon with coins */
@@ -2470,7 +2537,7 @@ function App(){
               h('div',{style:{width:38,height:38,borderRadius:19,background:'rgba(16,185,129,0.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},h(Ico,{name:'walletshort',size:18,color:'#10b981'})),
               h('div',{style:{flex:1,minWidth:0}},
                 h('p',{style:{fontWeight:700,fontSize:12,color:'#f1f5f9',fontFamily:'monospace',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},wAccount||''),
-                h('p',{style:{fontSize:10,color:'#64748b'}},wStatus==='connected_mm'?'MetaMask':'WalletConnect'))),
+                h('p',{style:{fontSize:10,color:'#64748b'}},wStatus==='connected_mm'?'MetaMask':wStatus==='connected_view'?'View-Only':'WalletConnect'))),
             h('button',{onClick:disconnect,style:{width:'100%',padding:'12px',background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.25)',borderRadius:12,color:'#f87171',fontWeight:700,fontSize:13,cursor:'pointer'}},'Disconnect Wallet'))
         :h('div',{style:Object.assign({},CARD,{marginBottom:10})},
             h('p',{style:{fontWeight:900,fontSize:14,color:'#f1f5f9',marginBottom:14}},'Connect Wallet'),
@@ -2479,8 +2546,8 @@ function App(){
             h('button',{onClick:connectWalletConnect,style:{width:'100%',padding:'14px',background:'linear-gradient(135deg,rgba(34,211,238,0.12),rgba(59,130,246,0.12))',border:'1px solid rgba(34,211,238,0.3)',borderRadius:14,color:'#22d3ee',fontWeight:900,marginBottom:8,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}},
               h(Ico,{name:'link',size:18,color:'#22d3ee'}),h('span',null,'WalletConnect')),
             h('div',{style:{height:1,background:'#1e293b',margin:'8px 0'}}),
-            h('button',{style:{width:'100%',padding:'13px',background:'#1e293b',border:'1px solid #334155',borderRadius:14,color:'#f1f5f9',fontWeight:700,marginBottom:6,fontSize:13,cursor:'pointer'}},'📥 Import by Seed Phrase'),
-            h('button',{style:{width:'100%',padding:'13px',background:'#1e293b',border:'1px solid #334155',borderRadius:14,color:'#f1f5f9',fontWeight:700,fontSize:13,cursor:'pointer'}},'🔑 View-Only by Address')),
+            h('button',{onClick:function(){setShowSeedInfo(true);},style:{width:'100%',padding:'13px',background:'#1e293b',border:'1px solid #334155',borderRadius:14,color:'#f1f5f9',fontWeight:700,marginBottom:6,fontSize:13,cursor:'pointer'}},'📥 Import by Seed Phrase'),
+            h('button',{onClick:function(){setShowViewOnly(true);setVoErr('');setVoBal(null);},style:{width:'100%',padding:'13px',background:'#1e293b',border:'1px solid #334155',borderRadius:14,color:'#f1f5f9',fontWeight:700,fontSize:13,cursor:'pointer'}},'🔑 View-Only by Address')),
       /* Supported chains grid */
       h('div',{style:Object.assign({},CARD,{marginBottom:10})},
         h('p',{style:{fontWeight:900,fontSize:14,color:'#f1f5f9',marginBottom:12}},'Supported Networks'),
@@ -2494,7 +2561,7 @@ function App(){
       h('div',{style:{background:'rgba(34,211,238,0.06)',border:'1px solid rgba(34,211,238,0.15)',borderRadius:14,padding:14}},
         h('p',{style:{fontSize:12,fontWeight:900,color:'#22d3ee',marginBottom:6}},'ℹ About WalletConnect'),
         h('p',{style:{fontSize:11,color:'#64748b',lineHeight:1.7,marginBottom:8}},'WalletConnect (now Reown) is an open protocol that connects decentralised apps to wallets using end-to-end encrypted sessions. It works with 400+ wallets including Trust, MetaMask Mobile, Rainbow, Coinbase Wallet and more.'),
-        h('p',{style:{fontSize:11,color:'#475569',lineHeight:1.5}},'To enable WalletConnect: register at cloud.reown.com, create a project and replace the Project ID in Settings → API Keys.'),
+        h('button',{onClick:function(){setBrowserUrl&&setBrowserUrl('https://cloud.reown.com');},style:{background:'none',border:'none',padding:0,textAlign:'left',fontSize:11,color:'#475569',lineHeight:1.5,cursor:'pointer',textDecoration:'underline'}},'To enable WalletConnect: register at cloud.reown.com, create a project and replace the Project ID in Settings → API Keys.'),
         h('p',{style:{fontSize:10,color:'#334155',marginTop:6}},'🔒 Non-Custodial · Your keys never leave your wallet')));
   }
 
@@ -2573,7 +2640,7 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.6')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.7')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),
@@ -2590,7 +2657,7 @@ function App(){
         page==='news'&&h(stabilize('NewsPage',NewsPage),null),
         page==='shop'&&h(stabilize('ShopPage',ShopPage),null),
         page==='calc'&&CalcPage(),
-        page==='wallet'&&h(stabilize('WalletPage',WalletPage),null),
+        page==='wallet'&&h(stabilize('WalletPage',WalletPage),{setBrowserUrl:setBrowserUrl}),
         page==='password'&&h(stabilize('PasswordPage',PasswordPage),null),
         page==='inheritance'&&h(stabilize('InheritancePage',InheritancePage),null),
         page==='knowledge'&&h(stabilize('KnowledgePage',KnowledgePage),null))),

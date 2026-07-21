@@ -989,18 +989,29 @@ function App(){
     }
     function addSlot(){
       if(!isProF){setShowUpsell(true);return;}
+      if(futSlots.length>=5&&!isProF){setShowUpsell(true);return;}
       var id=uid();
       saveFutSlots(futSlots.concat([{id:id,name:'Setup '+(futSlots.length+1),mode:fMode,lev:fLev,ent:fEnt,ex:fEx,inv:fInv,wal:fWal,coin:fCoin}]));
       setActiveSlotId(id);
     }
     function deleteSlot(id){saveFutSlots(futSlots.filter(function(s){return s.id!==id;}));if(activeSlotId===id)setActiveSlotId(null);}
-    return h('div',null,
+    /* Dynamic compact sizing \u2014 scales down on short phone screens, up a touch on tall ones */
+    var CS={
+      cardPad:'clamp(7px,1.6vh,13px) clamp(10px,3vw,14px)',
+      cardR:16,
+      gapSm:'clamp(4px,0.9vh,8px)',
+      fontLbl:'clamp(9px,2.1vh,11px)',
+      fontVal:'clamp(13px,2.9vh,16px)',
+      fontBig:'clamp(26px,7vh,38px)',
+      fontMid:'clamp(13px,3vh,17px)'
+    };
+    return h('div',{style:{display:'flex',flexDirection:'column',height:'100%',minHeight:0}},
       showUpsell&&h('div',{style:{position:'fixed',inset:0,zIndex:400,display:'flex',flexDirection:'column'}},
         h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.8)'},onClick:function(){setShowUpsell(false);}}),
         h('div',{style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'22px 18px calc(22px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:12,textAlign:'center'}},
-          h('div',{style:{width:56,height:56,borderRadius:28,background:'linear-gradient(135deg,#22d3ee22,#a78bfa22)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 4px'}},h('span',{style:{fontSize:24}},'✦')),
+          h('div',{style:{width:56,height:56,borderRadius:28,background:'linear-gradient(135deg,#22d3ee22,#a78bfa22)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 4px'}},h('span',{style:{fontSize:24}},'\u2726')),
           h('p',{style:{fontWeight:900,fontSize:17,color:'#f1f5f9'}},'Saved Setups is a Pro feature'),
-          h('p',{style:{fontSize:13,color:'#94a3b8',lineHeight:1.6}},'Upgrade to Pro to save unlimited futures setups and instantly switch between them — no more re-entering your numbers every time you open the app.'),
+          h('p',{style:{fontSize:13,color:'#94a3b8',lineHeight:1.6}},'Upgrade to Pro to save unlimited futures setups and instantly switch between them \u2014 no more re-entering your numbers every time you open the app.'),
           h('button',{onClick:function(){setShowUpsell(false);setPage('settings');},style:{width:'100%',padding:'14px',borderRadius:14,background:'linear-gradient(135deg,#22d3ee,#a78bfa)',border:'none',color:'#0a0f1e',fontWeight:900,fontSize:15,cursor:'pointer'}},'View Pro Plan'),
           h('button',{onClick:function(){setShowUpsell(false);},style:{width:'100%',padding:'10px',background:'none',border:'none',color:'#64748b',fontWeight:700,fontSize:13}},'Not now'))),
       renameSlot&&h('div',{style:{position:'fixed',inset:0,zIndex:400,display:'flex',flexDirection:'column'}},
@@ -1010,89 +1021,72 @@ function App(){
           h('input',{type:'text',value:renameVal,autoFocus:true,onChange:function(e){setRenameVal(e.target.value.slice(0,20));},style:{width:'100%',background:'#1e293b',border:'1px solid #334155',borderRadius:12,padding:'12px 14px',color:'#f1f5f9',fontSize:14,outline:'none'}}),
           h('button',{onClick:function(){saveFutSlots(futSlots.map(function(s){return s.id===renameSlot?Object.assign({},s,{name:renameVal||s.name}):s;}));setRenameSlot(null);},style:{width:'100%',padding:'13px',borderRadius:14,background:'linear-gradient(135deg,#0ea5e9,#3b82f6)',border:'none',color:'#fff',fontWeight:900,fontSize:14,cursor:'pointer'}},'Save Name'),
           h('button',{onClick:function(){setRenameSlot(null);},style:{width:'100%',padding:'10px',background:'none',border:'none',color:'#64748b',fontWeight:700,fontSize:13}},'Cancel'))),
-      h('div',{style:Object.assign({},SB,{marginBottom:10})},
-        h('p',{style:HD},'Futures Calculator'),
-        h('button',{onClick:function(){setFMode('long');setFLev(10);setLevInput('10');setFEnt(fCoin?String(fCoin.current_price):'81000');setFEx(fCoin?String((fCoin.current_price*1.05).toFixed(2)):'85050');setFInv('1000');setFWal('5000');setActiveSlotId(null);},style:{background:'#1e293b',border:'1px solid #334155',borderRadius:12,padding:'6px 14px',fontSize:12,color:'#94a3b8'}},'Reset')),
-      /* Saved setups tab strip - Pro feature */
-      h('div',{style:{display:'flex',gap:6,overflowX:'auto',paddingBottom:8,marginBottom:8}},
-        futSlots.slice(0,isProF?futSlots.length:5).map(function(s,i){
-          var active=activeSlotId===s.id;
-          return h('div',{key:s.id,style:{display:'flex',alignItems:'center',flexShrink:0}},
-            h('button',{onClick:function(){loadSlot(s);},onDoubleClick:function(){setRenameSlot(s.id);setRenameVal(s.name);},style:{padding:'7px 12px',borderRadius:10,fontSize:11,fontWeight:700,border:active?'1px solid rgba(34,211,238,0.5)':'1px solid #334155',background:active?'rgba(34,211,238,0.15)':'#1e293b',color:active?'#22d3ee':'#94a3b8',cursor:'pointer',whiteSpace:'nowrap'}},s.name),
-            h('button',{onClick:function(){deleteSlot(s.id);},style:{padding:'6px',background:'none',border:'none',color:'#475569',cursor:'pointer'}},h(Ico,{name:'x',size:11,color:'#475569'})));
-        }),
-        futSlots.length<5&&Array.from({length:5-futSlots.length}).map(function(_,i){
-          var slotNum=futSlots.length+i+1;
-          return h('button',{key:'empty'+i,onClick:function(){
-            if(!isProF){setShowUpsell(true);return;}
-            var id=uid();
-            saveFutSlots(futSlots.concat([{id:id,name:'Setup '+slotNum,mode:fMode,lev:fLev,ent:fEnt,ex:fEx,inv:fInv,wal:fWal,coin:fCoin}]));
-            setActiveSlotId(id);
-          },style:{padding:'7px 12px',borderRadius:10,fontSize:11,fontWeight:700,border:'1px dashed '+(isProF?'#334155':'rgba(100,116,139,0.3)'),background:'transparent',color:'#475569',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:4}},isProF?null:h(Ico,{name:'lock',size:9,color:'#475569'}),'+ Save Slot '+slotNum);
-        }),
-        futSlots.length>=5&&h('button',{onClick:addSlot,style:{padding:'7px 12px',borderRadius:10,fontSize:11,fontWeight:700,border:'1px dashed '+(isProF?'rgba(34,211,238,0.4)':'#334155'),background:'transparent',color:isProF?'#22d3ee':'#475569',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:4}},isProF?null:h(Ico,{name:'lock',size:10,color:'#475569'}),'+ Add More'),
-        activeSlotId&&h('button',{onClick:function(){saveToSlot(activeSlotId);},style:{padding:'7px 10px',borderRadius:10,fontSize:11,fontWeight:700,border:'1px solid rgba(52,211,153,0.4)',background:'rgba(52,211,153,0.1)',color:'#34d399',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap'}},'💾 Update')),
-      h('button',{onClick:function(){setFOpen(true);},style:Object.assign({},CARD,{width:'100%',display:'flex',alignItems:'center',gap:12,cursor:'pointer',textAlign:'left',boxSizing:'border-box',border:'1px solid #334155'})},
-        fCoin&&fCoin.image?h('img',{src:fCoin.image,alt:'',style:{width:38,height:38,borderRadius:19}}):h(Avatar,{sym:fCoin?fCoin.symbol:'BTC',size:38}),
-        h('div',{style:{flex:1}},
-          h('p',{style:{fontWeight:700,fontSize:14,color:'#f1f5f9'}},fCoin?fCoin.name:'Select Cryptocurrency'),
-          h('p',{style:{fontSize:12,color:'#64748b'}},fCoin?'$'+fmtP(fCoin.current_price):'Tap to search')),
-        h(Ico,{name:'chevron',size:16,color:'#64748b'})),
+      /* Header \u2014 title + saved-setup chips (compact) + reset, all in one row */
+      h('div',{style:{display:'flex',alignItems:'center',gap:6,flexShrink:0,marginBottom:CS.gapSm}},
+        h('p',{style:{fontSize:'clamp(14px,3.2vh,16px)',fontWeight:900,color:'#f1f5f9',flexShrink:0}},'Futures'),
+        h('div',{style:{display:'flex',gap:5,overflowX:'auto',flex:1,alignItems:'center'}},
+          futSlots.slice(0,isProF?futSlots.length:5).map(function(s){
+            var active=activeSlotId===s.id;
+            return h('button',{key:s.id,onClick:function(){loadSlot(s);},onDoubleClick:function(){setRenameSlot(s.id);setRenameVal(s.name);},style:{padding:'5px 9px',borderRadius:8,fontSize:10,fontWeight:700,border:active?'1px solid rgba(34,211,238,0.5)':'1px solid #334155',background:active?'rgba(34,211,238,0.15)':'#1e293b',color:active?'#22d3ee':'#94a3b8',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}},s.name);
+          }),
+          activeSlotId&&h('button',{onClick:function(){saveToSlot(activeSlotId);},style:{padding:'5px 7px',borderRadius:8,border:'1px solid rgba(52,211,153,0.4)',background:'rgba(52,211,153,0.1)',color:'#34d399',cursor:'pointer',flexShrink:0}},h(Ico,{name:'check',size:10,color:'#34d399'})),
+          h('button',{onClick:addSlot,style:{width:22,height:22,borderRadius:8,border:'1px dashed '+(isProF?'rgba(34,211,238,0.4)':'#334155'),background:'transparent',color:isProF?'#22d3ee':'#475569',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}},isProF?h(Ico,{name:'plus',size:11,color:'#22d3ee'}):h(Ico,{name:'lock',size:9,color:'#475569'}))),
+        h('button',{onClick:function(){setFMode('long');setFLev(10);setLevInput('10');setFEnt(fCoin?String(fCoin.current_price):'81000');setFEx(fCoin?String((fCoin.current_price*1.05).toFixed(2)):'85050');setFInv('1000');setFWal('5000');setActiveSlotId(null);},style:{background:'#1e293b',border:'1px solid #334155',borderRadius:9,padding:'5px 10px',fontSize:10,color:'#94a3b8',flexShrink:0}},'Reset')),
+      /* Coin selector \u2014 compact */
+      h('button',{onClick:function(){setFOpen(true);},style:{display:'flex',alignItems:'center',gap:9,cursor:'pointer',textAlign:'left',boxSizing:'border-box',border:'1px solid #334155',background:'#1e293b',borderRadius:14,padding:'clamp(6px,1.4vh,10px) 12px',flexShrink:0,marginBottom:CS.gapSm,width:'100%'}},
+        fCoin&&fCoin.image?h('img',{src:fCoin.image,alt:'',style:{width:26,height:26,borderRadius:13,flexShrink:0}}):h(Avatar,{sym:fCoin?fCoin.symbol:'BTC',size:26}),
+        h('div',{style:{flex:1,minWidth:0}},
+          h('p',{style:{fontWeight:700,fontSize:CS.fontVal,color:'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},fCoin?fCoin.name:'Select Cryptocurrency'),
+          h('p',{style:{fontSize:CS.fontLbl,color:'#64748b'}},fCoin?'$'+fmtP(fCoin.current_price):'Tap to search')),
+        h(Ico,{name:'chevron',size:14,color:'#64748b'})),
       h(CoinSheet,{open:fOpen,onClose:function(){setFOpen(false);},query:fSrc,setQuery:setFSrc,items:filterCoins(fSrc),title:'Select Coin',coinsLoading:cLoad,coinsLen:coins.length,
         onSelect:function(c){setFCoin(c);setFEnt(String(c.current_price));setFEx(String((c.current_price*1.05).toFixed(2)));}}),
-      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}},
+      /* Long/Short segmented control */
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,flexShrink:0,marginBottom:CS.gapSm}},
         ['long','short'].map(function(t){
           var a=fMode===t;
-          return h('button',{key:t,onClick:function(){setFMode(t);},style:{padding:'12px 0',borderRadius:16,fontWeight:900,fontSize:14,border:'none',background:a?(t==='long'?'linear-gradient(135deg,#10b981,#059669)':'linear-gradient(135deg,#ef4444,#dc2626)'):'#1e293b',color:a?'#fff':'#475569'}},t==='long'?'▲ LONG':'▼ SHORT');
+          return h('button',{key:t,onClick:function(){setFMode(t);},style:{padding:'clamp(7px,1.6vh,12px) 0',borderRadius:14,fontWeight:900,fontSize:CS.fontVal,border:'none',background:a?(t==='long'?'linear-gradient(135deg,#10b981,#059669)':'linear-gradient(135deg,#ef4444,#dc2626)'):'#1e293b',color:a?'#fff':'#475569',boxShadow:a?'0 2px 10px '+(t==='long'?'rgba(16,185,129,0.25)':'rgba(239,68,68,0.25)'):'none'}},t==='long'?'\u25b2 LONG':'\u25bc SHORT');
         })),
-      /* Leverage - editable display + marker slider */
-      h('div',{style:Object.assign({},CARD,{marginBottom:10,padding:'12px 14px'})},
-        h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}},
-          h('p',{style:{fontSize:12,color:'#64748b',fontWeight:700,flex:1}},'Leverage'),
-          h('div',{style:{display:'flex',gap:4}},
-            LMARKS.map(function(v){return h('button',{key:v,onClick:function(){setFLev(v);setLevInput(String(v));},style:{padding:'4px 6px',borderRadius:8,fontSize:10,fontWeight:700,border:'none',background:fLev===v?'#0ea5e9':'#334155',color:fLev===v?'#fff':'#64748b',minWidth:26}},v+'x');})),
-          /* Editable leverage number - tap to edit */
+      /* Leverage \u2014 compact */
+      h('div',{style:Object.assign({},CARD,{marginBottom:CS.gapSm,padding:CS.cardPad,flexShrink:0})},
+        h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:'clamp(4px,1vh,8px)'}},
+          h('p',{style:{fontSize:CS.fontLbl,color:'#64748b',fontWeight:700,flex:1}},'Leverage'),
+          h('div',{style:{display:'flex',gap:3}},
+            LMARKS.map(function(v){return h('button',{key:v,onClick:function(){setFLev(v);setLevInput(String(v));},style:{padding:'3px 5px',borderRadius:7,fontSize:9,fontWeight:700,border:'none',background:fLev===v?'#0ea5e9':'#334155',color:fLev===v?'#fff':'#64748b',minWidth:22}},v+'x');})),
           levEditing
             ?h('input',{type:'text',inputMode:'numeric',value:levInput,autoFocus:true,
                 onChange:function(e){setLevInput(e.target.value.replace(/[^0-9]/g,''));},
-                onBlur:function(){
-                  var v=Math.max(1,Math.min(50,parseInt(levInput)||1));
-                  setFLev(v);setLevInput(String(v));setLevEditing(false);
-                },
+                onBlur:function(){var v=Math.max(1,Math.min(50,parseInt(levInput)||1));setFLev(v);setLevInput(String(v));setLevEditing(false);},
                 onKeyDown:function(e){if(e.key==='Enter'){var v=Math.max(1,Math.min(50,parseInt(levInput)||1));setFLev(v);setLevInput(String(v));setLevEditing(false);}},
-                style:{width:52,background:'#0f172a',border:'1px solid #22d3ee',borderRadius:8,padding:'4px 6px',color:'#22d3ee',fontWeight:900,fontSize:18,textAlign:'center',outline:'none'}})
-            :h('button',{onClick:function(){setLevEditing(true);setLevInput(String(fLev));},style:{background:'rgba(34,211,238,0.1)',border:'1px solid rgba(34,211,238,0.3)',borderRadius:8,padding:'4px 10px',cursor:'pointer',minWidth:52,textAlign:'center'}},
-                h('span',{style:{fontSize:18,fontWeight:900,color:'#22d3ee'}},fLev+'x'))),
-        /* Smooth slider — no tick labels below */
-        h('div',{style:{padding:'4px 0 8px',position:'relative'}},
-          /* Coloured track fill via gradient */
-          h('div',{style:{position:'relative',height:6,borderRadius:3,background:'#334155',marginBottom:10}},
-            h('div',{style:{position:'absolute',left:0,top:0,height:'100%',borderRadius:3,background:'linear-gradient(90deg,#22d3ee,#3b82f6)',width:(((fLev-1)/49)*100)+'%',transition:'width 0.1s'}}),
-            h('div',{style:{position:'absolute',top:'50%',transform:'translateY(-50%)',left:'calc('+((fLev-1)/49)*100+'% - 11px)',width:22,height:22,borderRadius:11,background:'#22d3ee',boxShadow:'0 0 8px rgba(34,211,238,0.6)',cursor:'pointer',zIndex:2,transition:'left 0.1s'}}),
+                style:{width:44,background:'#0f172a',border:'1px solid #22d3ee',borderRadius:7,padding:'3px 5px',color:'#22d3ee',fontWeight:900,fontSize:15,textAlign:'center',outline:'none'}})
+            :h('button',{onClick:function(){setLevEditing(true);setLevInput(String(fLev));},style:{background:'rgba(34,211,238,0.1)',border:'1px solid rgba(34,211,238,0.3)',borderRadius:7,padding:'3px 8px',cursor:'pointer',minWidth:44,textAlign:'center'}},
+                h('span',{style:{fontSize:15,fontWeight:900,color:'#22d3ee'}},fLev+'x'))),
+        h('div',{style:{position:'relative'}},
+          h('div',{style:{position:'relative',height:5,borderRadius:3,background:'#334155',marginBottom:'clamp(4px,1vh,8px)'}},
+            h('div',{style:{position:'absolute',left:0,top:0,height:'100%',borderRadius:3,background:'linear-gradient(90deg,#22d3ee,#3b82f6)',width:(((fLev-1)/49)*100)+'%'}}),
+            h('div',{style:{position:'absolute',top:'50%',transform:'translateY(-50%)',left:'calc('+((fLev-1)/49)*100+'% - 9px)',width:18,height:18,borderRadius:9,background:'#22d3ee',boxShadow:'0 0 6px rgba(34,211,238,0.6)',zIndex:2}}),
             h('input',{type:'range',min:1,max:50,step:1,value:fLev,
               onInput:function(e){var v=+e.target.value;setFLev(v);setLevInput(String(v));},
               onChange:function(e){var v=+e.target.value;setFLev(v);setLevInput(String(v));},
-              style:{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',zIndex:3,margin:0}})),
-          /* Tick marks only (no labels) */
-          h('div',{style:{display:'flex',justifyContent:'space-between',paddingBottom:2}},
-            LMARKS.map(function(v){
-              var active=fLev>=v;
-              return h('div',{key:v,style:{width:2,height:5,borderRadius:1,background:active?'#22d3ee':'#334155'}});
-            })))),
-      /* Inputs - NO type=number, NO onFocus select to keep keyboard open */
-      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}},
-        [{l:'Entry ($)',v:fEnt,s:setFEnt},{l:'Exit ($)',v:fEx,s:setFEx},{l:'Invested ($)',v:fInv,s:setFInv},{l:'Wallet ($)',v:fWal,s:setFWal}].map(function(item){
-          return h('div',{key:item.l,style:{background:'#1e293b',border:'1px solid #334155',borderRadius:16,padding:12}},
-            h('p',{style:LBL},item.l),
-            h('input',{type:'text',inputMode:'decimal',value:item.v,placeholder:'0',
-              onChange:function(e){item.s(e.target.value.replace(/[^0-9.]/g,''));},
-              style:{width:'100%',background:'transparent',border:'none',outline:'none',color:'#f1f5f9',fontSize:15,fontWeight:700,padding:0,WebkitUserSelect:'text'}}));
-        })),
-      h('div',{style:{background:pos?'rgba(16,185,129,0.08)':'rgba(239,68,68,0.08)',border:'1px solid '+(pos?'rgba(16,185,129,0.2)':'rgba(239,68,68,0.2)'),borderRadius:20,padding:16,textAlign:'center',marginBottom:10}},
-        h('p',{style:{fontSize:11,color:'#64748b',textTransform:'uppercase',letterSpacing:1,marginBottom:6}},'Potential P&L'),
-        h('p',{style:{fontSize:40,fontWeight:900,color:pos?'#34d399':'#f87171',lineHeight:1}},(pos?'+':'-')+'$'+Math.abs(fcalc.pnl).toLocaleString('en-US',{maximumFractionDigits:2})),
-        h('p',{style:{fontSize:18,fontWeight:700,color:pos?'#34d399':'#f87171',marginTop:4}},(fcalc.pnlPct>=0?'+':'')+fcalc.pnlPct.toFixed(2)+'%')),
-      h('div',{style:{display:'flex',gap:8}},
+              style:{position:'absolute',inset:-8,width:'calc(100% + 16px)',height:'calc(100% + 16px)',opacity:0,cursor:'pointer',zIndex:3,margin:0}})),
+          h('div',{style:{display:'flex',justifyContent:'space-between'}},
+            LMARKS.map(function(v){var active=fLev>=v;return h('div',{key:v,style:{width:2,height:4,borderRadius:1,background:active?'#22d3ee':'#334155'}});})))),
+      /* Entry/Exit/Invested/Wallet \u2014 single grouped iOS-style card, 2x2 with internal dividers */
+      h('div',{style:Object.assign({},CARD,{marginBottom:CS.gapSm,padding:0,overflow:'hidden',flexShrink:0})},
+        h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr'}},
+          [{l:'Entry ($)',v:fEnt,s:setFEnt},{l:'Exit ($)',v:fEx,s:setFEx},{l:'Invested ($)',v:fInv,s:setFInv},{l:'Wallet ($)',v:fWal,s:setFWal}].map(function(item,idx){
+            return h('div',{key:item.l,style:{padding:CS.cardPad,borderRight:idx%2===0?'1px solid #263449':'none',borderBottom:idx<2?'1px solid #263449':'none'}},
+              h('p',{style:{fontSize:CS.fontLbl,color:'#64748b',textTransform:'uppercase',letterSpacing:0.6,marginBottom:2}},item.l),
+              h('input',{type:'text',inputMode:'decimal',value:item.v,placeholder:'0',
+                onChange:function(e){item.s(e.target.value.replace(/[^0-9.]/g,''));},
+                style:{width:'100%',background:'transparent',border:'none',outline:'none',color:'#f1f5f9',fontSize:CS.fontVal,fontWeight:700,padding:0,WebkitUserSelect:'text'}}));
+          }))),
+      /* P&L \u2014 fills remaining space, scales with it */
+      h('div',{style:{background:pos?'rgba(16,185,129,0.08)':'rgba(239,68,68,0.08)',border:'1px solid '+(pos?'rgba(16,185,129,0.2)':'rgba(239,68,68,0.2)'),borderRadius:18,textAlign:'center',marginBottom:CS.gapSm,flex:1,minHeight:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'4px 8px'}},
+        h('p',{style:{fontSize:CS.fontLbl,color:'#64748b',textTransform:'uppercase',letterSpacing:1,marginBottom:2}},'Potential P&L'),
+        h('p',{style:{fontSize:CS.fontBig,fontWeight:900,color:pos?'#34d399':'#f87171',lineHeight:1}},(pos?'+':'-')+'$'+Math.abs(fcalc.pnl).toLocaleString('en-US',{maximumFractionDigits:2})),
+        h('p',{style:{fontSize:CS.fontMid,fontWeight:700,color:pos?'#34d399':'#f87171',marginTop:2}},(fcalc.pnlPct>=0?'+':'')+fcalc.pnlPct.toFixed(2)+'%')),
+      h('div',{style:{display:'flex',gap:7,flexShrink:0}},
         h(StatCard,{label:'Position',value:'$'+fmt(fcalc.pos,0),color:'#a78bfa'}),
         h(StatCard,{label:'Liquidation',value:'$'+fmtP(fcalc.liq),color:'#fbbf24'}),
         h(StatCard,{label:'Margin',value:fcalc.margin.toFixed(1)+'%',color:fcalc.margin>50?'#f87171':'#22d3ee'})));
@@ -2689,13 +2683,13 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.3')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.4')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),
         h('button',{onClick:function(){setShowSettings(true);},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'gear',size:15,color:'#64748b'})))),
-    h('div',{ref:scrollRef,style:{flex:1,overflowY:page==='calc'?'hidden':'auto',WebkitOverflowScrolling:'touch',overscrollBehavior:'contain'}},
-      h('div',{style:page==='calc'?{padding:'6px 12px 10px',height:'100%',boxSizing:'border-box',display:'flex',flexDirection:'column'}:{padding:'0 16px 110px'}},
+    h('div',{ref:scrollRef,style:{flex:1,overflowY:(page==='calc'||page==='futures')?'hidden':'auto',WebkitOverflowScrolling:'touch',overscrollBehavior:'contain'}},
+      h('div',{style:page==='calc'?{padding:'6px 12px 10px',height:'100%',boxSizing:'border-box',display:'flex',flexDirection:'column'}:page==='futures'?{padding:'6px 14px 8px',height:'100%',boxSizing:'border-box',display:'flex',flexDirection:'column',overflow:'hidden'}:{padding:'0 16px 110px'}},
         page==='market'&&MarketPage(),
         page==='signals'&&h(stabilize('SignalsPage',SignalsPage),null),
         page==='buy'&&h(stabilize('BuyPage',BuyPage),null),

@@ -1008,7 +1008,8 @@ function App(){
     return h('div',{style:{display:'flex',flexDirection:'column',height:'100%',minHeight:0}},
       showUpsell&&h('div',{style:{position:'fixed',inset:0,zIndex:400,display:'flex',flexDirection:'column'}},
         h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.8)'},onClick:function(){setShowUpsell(false);}}),
-        h('div',{style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'22px 18px calc(22px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:12,textAlign:'center'}},
+        h('div',Object.assign({style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'8px 18px calc(22px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:12,textAlign:'center',transition:'transform 0.1s'}},swipeClose(function(){setShowUpsell(false);})),
+          h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 10px'}}),
           h('div',{style:{width:56,height:56,borderRadius:28,background:'linear-gradient(135deg,#22d3ee22,#a78bfa22)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 4px'}},h('span',{style:{fontSize:24}},'\u2726')),
           h('p',{style:{fontWeight:900,fontSize:17,color:'#f1f5f9'}},'Saved Setups is a Pro feature'),
           h('p',{style:{fontSize:13,color:'#94a3b8',lineHeight:1.6}},'Upgrade to Pro to save unlimited futures setups and instantly switch between them \u2014 no more re-entering your numbers every time you open the app.'),
@@ -1016,7 +1017,8 @@ function App(){
           h('button',{onClick:function(){setShowUpsell(false);},style:{width:'100%',padding:'10px',background:'none',border:'none',color:'#64748b',fontWeight:700,fontSize:13}},'Not now'))),
       renameSlot&&h('div',{style:{position:'fixed',inset:0,zIndex:400,display:'flex',flexDirection:'column'}},
         h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.8)'},onClick:function(){setRenameSlot(null);}}),
-        h('div',{style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'20px 16px calc(20px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:10}},
+        h('div',Object.assign({style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'8px 16px calc(20px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:10,transition:'transform 0.1s'}},swipeClose(function(){setRenameSlot(null);})),
+          h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 8px'}}),
           h('p',{style:{fontWeight:900,fontSize:15,color:'#f1f5f9'}},'Rename Setup'),
           h('input',{type:'text',value:renameVal,autoFocus:true,onChange:function(e){setRenameVal(e.target.value.slice(0,20));},style:{width:'100%',background:'#1e293b',border:'1px solid #334155',borderRadius:12,padding:'12px 14px',color:'#f1f5f9',fontSize:14,outline:'none'}}),
           h('button',{onClick:function(){saveFutSlots(futSlots.map(function(s){return s.id===renameSlot?Object.assign({},s,{name:renameVal||s.name}):s;}));setRenameSlot(null);},style:{width:'100%',padding:'13px',borderRadius:14,background:'linear-gradient(135deg,#0ea5e9,#3b82f6)',border:'none',color:'#fff',fontWeight:900,fontSize:14,cursor:'pointer'}},'Save Name'),
@@ -1502,6 +1504,52 @@ function App(){
     var acState=useState(activeCryptoLS||defCryptoIds);var activeCryptoIds=acState[0];var setActiveCryptoIds=acState[1];
     function saveActiveCryptos(v){setActiveCryptoIds(v);LS.set('activeCryptoCurrs',v);}
 
+    /* Drag-to-reorder: fiat currency grid */
+    var fdState=useState(null);var fiatDragCode=fdState[0];var setFiatDragCode=fdState[1];
+    var fiatItemRefs=useRef({}).current;
+    function fiatDragStart(code){return function(e){setFiatDragCode(code);};}
+    function fiatDragMove(e){
+      if(!fiatDragCode)return;
+      var t=e.touches&&e.touches[0];if(!t)return;
+      var bestCode=null,bestDist=Infinity;
+      Object.keys(fiatItemRefs).forEach(function(code){
+        var el=fiatItemRefs[code];if(!el)return;
+        var r=el.getBoundingClientRect();
+        var cx=r.left+r.width/2,cy=r.top+r.height/2;
+        var d=(cx-t.clientX)*(cx-t.clientX)+(cy-t.clientY)*(cy-t.clientY);
+        if(d<bestDist){bestDist=d;bestCode=code;}
+      });
+      if(bestCode&&bestCode!==fiatDragCode){
+        var arr=activeFiats.slice();
+        var from=arr.indexOf(fiatDragCode),to=arr.indexOf(bestCode);
+        if(from!==-1&&to!==-1){arr.splice(from,1);arr.splice(to,0,fiatDragCode);saveActiveFiats(arr);}
+      }
+    }
+    function fiatDragEnd(){setFiatDragCode(null);}
+
+    /* Drag-to-reorder: crypto coin grid */
+    var cdState=useState(null);var cryptoDragId=cdState[0];var setCryptoDragId=cdState[1];
+    var cryptoItemRefs=useRef({}).current;
+    function cryptoDragStart(id){return function(e){setCryptoDragId(id);};}
+    function cryptoDragMove(e){
+      if(!cryptoDragId)return;
+      var t=e.touches&&e.touches[0];if(!t)return;
+      var bestId=null,bestDist=Infinity;
+      Object.keys(cryptoItemRefs).forEach(function(id){
+        var el=cryptoItemRefs[id];if(!el)return;
+        var r=el.getBoundingClientRect();
+        var cx=r.left+r.width/2,cy=r.top+r.height/2;
+        var d=(cx-t.clientX)*(cx-t.clientX)+(cy-t.clientY)*(cy-t.clientY);
+        if(d<bestDist){bestDist=d;bestId=id;}
+      });
+      if(bestId&&bestId!==cryptoDragId){
+        var arr=activeCryptoIds.slice();
+        var from=arr.indexOf(cryptoDragId),to=arr.indexOf(bestId);
+        if(from!==-1&&to!==-1){arr.splice(from,1);arr.splice(to,0,cryptoDragId);saveActiveCryptos(arr);}
+      }
+    }
+    function cryptoDragEnd(){setCryptoDragId(null);}
+
     /* Manage crypto list sheet */
     var mcState=useState(false);var manageCryptoOpen=mcState[0];var setManageCryptoOpen=mcState[1];
     var mcqState=useState('');var manageCryptoQ=mcqState[0];var setManageCryptoQ=mcqState[1];
@@ -1623,7 +1671,7 @@ function App(){
       });
       return h('div',{style:{position:'fixed',inset:0,zIndex:350,display:'flex',flexDirection:'column'}},
         h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.82)'},onClick:function(){setManageFiatOpen(false);setManageFiatQ('');}}),
-        h('div',{style:{position:'absolute',bottom:0,left:0,right:0,background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',height:'82vh',display:'flex',flexDirection:'column'}},
+        h('div',Object.assign({style:{position:'absolute',bottom:0,left:0,right:0,background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',height:'82vh',display:'flex',flexDirection:'column',transition:'transform 0.1s'}},swipeClose(function(){setManageFiatOpen(false);setManageFiatQ('');})),
           h('div',{style:{padding:'14px 16px 10px',flexShrink:0}},
             h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 12px'}}),
             h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}},
@@ -1661,7 +1709,7 @@ function App(){
       }).slice(0,300);
       return h('div',{style:{position:'fixed',inset:0,zIndex:350,display:'flex',flexDirection:'column'}},
         h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.82)'},onClick:function(){setManageCryptoOpen(false);setManageCryptoQ('');}}),
-        h('div',{style:{position:'absolute',bottom:0,left:0,right:0,background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',height:'82vh',display:'flex',flexDirection:'column'}},
+        h('div',Object.assign({style:{position:'absolute',bottom:0,left:0,right:0,background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',height:'82vh',display:'flex',flexDirection:'column',transition:'transform 0.1s'}},swipeClose(function(){setManageCryptoOpen(false);setManageCryptoQ('');})),
           h('div',{style:{padding:'14px 16px 10px',flexShrink:0}},
             h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 12px'}}),
             h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}},
@@ -1735,7 +1783,7 @@ function App(){
     }
 
     /* Active crypto coins for quick-select grid */
-    var activeCryptoCoins=coins.filter(function(c){return activeCryptoIds.indexOf(c.id)!==-1;});
+    var activeCryptoCoins=activeCryptoIds.map(function(id){return coins.find(function(c){return c.id===id;});}).filter(Boolean);
     /* Also always include fromCoin/toCoin if selected */
 
     return h('div',null,
@@ -1801,18 +1849,22 @@ function App(){
           h('p',{style:{fontSize:15,fontWeight:700,color:'#94a3b8',marginTop:4}},toCurr+' — '+(ALL_CURR_NAMES[toCurr]||'')),
           h('p',{style:{fontSize:11,color:'#475569',marginTop:4}},'1 '+fromCurr+' = '+fiatRate.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:6})+' '+toCurr)),
         /* Quick reference grid */
-        h('p',{style:{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:0.8}},CURRS.length+' currencies active — tap to convert'),
+        h('p',{style:{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:0.8}},CURRS.length+' currencies active — tap to convert, drag ⠿ to reorder'),
         h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,marginBottom:10}},
           CURRS.slice(0,20).map(function(c){
             var rate=(FX[c]||1)/(FX[fromCurr]||1);
             var isActive=toCurr===c;
-            return h('button',{key:c,onClick:function(){setToCurr(c);},style:{display:'flex',alignItems:'center',gap:8,background:isActive?'rgba(34,211,238,0.12)':'#1e293b',border:isActive?'1px solid rgba(34,211,238,0.4)':'1px solid #334155',borderRadius:11,padding:'9px 12px',cursor:'pointer'}},
-              h('span',{style:{fontSize:18,lineHeight:1,flexShrink:0}},FLAGS[c]||'🏳'),
-              h('span',{style:{fontWeight:700,fontSize:12,color:isActive?'#22d3ee':'#94a3b8',flexShrink:0}},c),
-              (function(){
-                var valStr=(numAmt*rate).toLocaleString('en-US',{maximumFractionDigits:2});
-                return h('span',{style:{flex:1,textAlign:'right',fontWeight:900,fontSize:valStr.length>11?12:valStr.length>8?14:16,color:isActive?'#22d3ee':'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},valStr);
-              })());
+            var isDragging=fiatDragCode===c;
+            return h('div',{key:c,ref:function(el){fiatItemRefs[c]=el;},style:{display:'flex',gap:3,opacity:isDragging?0.6:1}},
+              h('button',{onClick:function(){setToCurr(c);},style:{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:8,background:isActive?'rgba(34,211,238,0.12)':'#1e293b',border:isActive?'1px solid rgba(34,211,238,0.4)':'1px solid #334155',borderRadius:11,padding:'9px 8px 9px 12px',cursor:'pointer'}},
+                h('span',{style:{fontSize:18,lineHeight:1,flexShrink:0}},FLAGS[c]||'🏳'),
+                h('span',{style:{fontWeight:700,fontSize:12,color:isActive?'#22d3ee':'#94a3b8',flexShrink:0}},c),
+                (function(){
+                  var valStr=(numAmt*rate).toLocaleString('en-US',{maximumFractionDigits:2});
+                  return h('span',{style:{flex:1,textAlign:'right',fontWeight:900,fontSize:valStr.length>11?12:valStr.length>8?14:16,color:isActive?'#22d3ee':'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},valStr);
+                })()),
+              h('div',{onTouchStart:fiatDragStart(c),onTouchMove:fiatDragMove,onTouchEnd:fiatDragEnd,style:{width:24,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:isDragging?'rgba(34,211,238,0.2)':'#1e293b',border:'1px solid '+(isDragging?'rgba(34,211,238,0.5)':'#334155'),borderRadius:8,touchAction:'none',cursor:'grab'}},
+                h('span',{style:{color:'#64748b',fontSize:13,letterSpacing:-1,lineHeight:1}},'⠿')));
           })),
         CURRS.length>20&&h('p',{style:{fontSize:11,color:'#475569',textAlign:'center',paddingBottom:4}},'+  '+(CURRS.length-20)+' more — use dropdowns above')),
 
@@ -1847,7 +1899,7 @@ function App(){
               h('p',{style:{fontSize:11,color:'#475569',marginTop:4}},'1 '+(fromCoin.symbol||'').toUpperCase()+' = '+cryptoRate.toLocaleString('en-US',{maximumFractionDigits:8})+' '+(toCoin.symbol||'').toUpperCase()))
           :h('div',{style:{background:'rgba(167,139,250,0.06)',border:'1px solid rgba(167,139,250,0.2)',borderRadius:16,padding:'22px 20px',textAlign:'center',marginBottom:12}},
               h('p',{style:{color:'#64748b',fontSize:13}},'Tap the selectors above to choose coins')),
-        h('p',{style:{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:0.8}},activeCryptoCoins.length+' coins — tap to set TO coin'),
+        h('p',{style:{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:8,textTransform:'uppercase',letterSpacing:0.8}},activeCryptoCoins.length+' coins — tap to set TO coin, drag ⠿ to reorder'),
         /* Show top coins as fallback if active list is empty but coins loaded */
         (activeCryptoCoins.length===0&&coins.length>0)
           ?h('div',null,
@@ -1870,12 +1922,16 @@ function App(){
                 var isActiveFrom=fromCoin&&fromCoin.id===c.id;
                 var isActiveTo=toCoin&&toCoin.id===c.id;
                 var convRate=fromCoin&&c.current_price>0?fromCoin.current_price/c.current_price:null;
-                return h('button',{key:c.id,onClick:function(){selectFromCoin(c);},style:{display:'flex',alignItems:'center',gap:8,background:isActiveTo?'rgba(167,139,250,0.15)':isActiveFrom?'rgba(34,211,238,0.08)':'#1e293b',borderRadius:11,padding:'8px 10px',border:isActiveTo?'1px solid rgba(167,139,250,0.45)':isActiveFrom?'1px solid rgba(34,211,238,0.3)':'1px solid #334155',cursor:'pointer'}},
-                  c.image?h('img',{src:c.image,alt:'',style:{width:24,height:24,borderRadius:12,flexShrink:0}}):h('div',{style:{width:24,height:24,borderRadius:12,background:'#334155',flexShrink:0}}),
-                  h('span',{style:{fontWeight:700,fontSize:11,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#94a3b8',flexShrink:0}},(c.symbol||'?').toUpperCase()),
-                  (function(){var vs=convRate?convRate.toLocaleString('en-US',{maximumFractionDigits:convRate>=100?2:convRate>=1?4:6}):'$'+fmtP(c.current_price);return h('span',{style:{flex:1,textAlign:'right',fontWeight:900,fontSize:vs.length>10?11:vs.length>7?13:15,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},vs);})(),
-                  isActiveFrom&&h('span',{style:{fontSize:8,color:'#22d3ee',fontWeight:700,flexShrink:0}},'FROM'),
-                  isActiveTo&&h('span',{style:{fontSize:8,color:'#a78bfa',fontWeight:700,flexShrink:0}},'TO'));
+                var isDragging=cryptoDragId===c.id;
+                return h('div',{key:c.id,ref:function(el){cryptoItemRefs[c.id]=el;},style:{display:'flex',gap:3,opacity:isDragging?0.6:1}},
+                  h('button',{onClick:function(){selectFromCoin(c);},style:{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:8,background:isActiveTo?'rgba(167,139,250,0.15)':isActiveFrom?'rgba(34,211,238,0.08)':'#1e293b',borderRadius:11,padding:'8px 6px 8px 10px',border:isActiveTo?'1px solid rgba(167,139,250,0.45)':isActiveFrom?'1px solid rgba(34,211,238,0.3)':'1px solid #334155',cursor:'pointer'}},
+                    c.image?h('img',{src:c.image,alt:'',style:{width:24,height:24,borderRadius:12,flexShrink:0}}):h('div',{style:{width:24,height:24,borderRadius:12,background:'#334155',flexShrink:0}}),
+                    h('span',{style:{fontWeight:700,fontSize:11,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#94a3b8',flexShrink:0}},(c.symbol||'?').toUpperCase()),
+                    (function(){var vs=convRate?convRate.toLocaleString('en-US',{maximumFractionDigits:convRate>=100?2:convRate>=1?4:6}):'$'+fmtP(c.current_price);return h('span',{style:{flex:1,textAlign:'right',fontWeight:900,fontSize:vs.length>10?11:vs.length>7?13:15,color:isActiveTo?'#a78bfa':isActiveFrom?'#22d3ee':'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},vs);})(),
+                    isActiveFrom&&h('span',{style:{fontSize:8,color:'#22d3ee',fontWeight:700,flexShrink:0}},'FROM'),
+                    isActiveTo&&h('span',{style:{fontSize:8,color:'#a78bfa',fontWeight:700,flexShrink:0}},'TO')),
+                  h('div',{onTouchStart:cryptoDragStart(c.id),onTouchMove:cryptoDragMove,onTouchEnd:cryptoDragEnd,style:{width:22,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:isDragging?'rgba(167,139,250,0.2)':'#1e293b',border:'1px solid '+(isDragging?'rgba(167,139,250,0.5)':'#334155'),borderRadius:8,touchAction:'none',cursor:'grab'}},
+                    h('span',{style:{color:'#64748b',fontSize:12,letterSpacing:-1,lineHeight:1}},'⠿')));
               }))));
   }
 
@@ -2487,7 +2543,7 @@ function App(){
       /* View-only address sheet */
       showViewOnly&&h('div',{style:{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column'}},
         h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.8)'},onClick:function(){setShowViewOnly(false);}}),
-        h('div',{style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'20px 16px calc(20px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:12}},
+        h('div',Object.assign({style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid #1e293b',padding:'8px 16px calc(20px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:12,transition:'transform 0.1s'}},swipeClose(function(){setShowViewOnly(false);})),
           h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 6px'}}),
           h('p',{style:{fontWeight:900,fontSize:16,color:'#f1f5f9'}},'View-Only by Address'),
           h('p',{style:{fontSize:12,color:'#64748b',lineHeight:1.5}},'Track any public wallet address — Ethereum (0x...) or Bitcoin. No private key or seed phrase needed, ever.'),

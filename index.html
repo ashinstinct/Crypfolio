@@ -1559,42 +1559,58 @@ function App(){
     var CURRS=activeFiats.filter(function(c){return ALL_FX[c];});
     var ALL_CURRS_LIST=Object.keys(ALL_FX);
 
-    /* Mini calculator state */
+    /* Amount calculator keypad (opens when tapping either Amount field) */
     var cpState=useState(false);var calcPopup=cpState[0];var setCalcPopup=cpState[1];
+    var ctState=useState('fiat');var calcTarget=ctState[0];var setCalcTarget=ctState[1];
     var mcd=useState('0');var miniCalcDisp=mcd[0];var setMiniCalcDisp=mcd[1];
     var mco=useState(null);var miniCalcOp=mco[0];var setMiniCalcOp=mco[1];
     var mcv=useState(null);var miniCalcStored=mcv[0];var setMiniCalcStored=mcv[1];
     var mcf=useState(false);var miniCalcFresh=mcf[0];var setMiniCalcFresh=mcf[1];
     var mce=useState('');var miniCalcExpr=mce[0];var setMiniCalcExpr=mce[1];
 
-    function miniCalcPress(v){
-      var d=miniCalcDisp,s=miniCalcStored,o=miniCalcOp,fr=miniCalcFresh;
-      if(v==='C'){setMiniCalcDisp('0');setMiniCalcOp(null);setMiniCalcStored(null);setMiniCalcFresh(false);setMiniCalcExpr('');}
-      else if(v==='±'){setMiniCalcDisp(d.charAt(0)==='-'?d.slice(1):'-'+d);}
-      else if(v==='%'){setMiniCalcDisp(String(parseFloat(d)/100));}
-      else if(v==='DEL'){setMiniCalcDisp(d.length>1?d.slice(0,-1):'0');}
-      else if(['+','-','×','÷'].includes(v)){
-        var cur=parseFloat(d)||0;
-        if(o&&s!==null&&!fr){var r=o==='+'?s+cur:o==='-'?s-cur:o==='×'?s*cur:s/cur;setMiniCalcStored(r);setMiniCalcDisp(String(r));setMiniCalcExpr(String(r)+' '+v);}
-        else{setMiniCalcStored(cur);setMiniCalcExpr(String(cur)+' '+v);}
-        setMiniCalcOp(v);setMiniCalcFresh(true);
+    function openCalc(target,initVal){
+      setCalcTarget(target);
+      setMiniCalcDisp(initVal&&initVal!=='0'?initVal:'0');
+      setMiniCalcExpr('');setMiniCalcOp(null);setMiniCalcStored(null);setMiniCalcFresh(true);
+      setCalcPopup(true);
+    }
+    function calcOpLabel(op){return op==='/'?String.fromCharCode(247):op==='*'?String.fromCharCode(215):op==='-'?String.fromCharCode(8722):op;}
+    function calcDigit(v){
+      var d=miniCalcDisp,fr=miniCalcFresh;
+      if(v==='.'&&d.indexOf('.')!==-1&&!fr)return;
+      var newDisp=(fr||d==='0')?(v==='.'?'0.':v):d+v;
+      setMiniCalcDisp(newDisp);
+      setMiniCalcExpr(miniCalcOp?(String(miniCalcStored)+' '+calcOpLabel(miniCalcOp)+' '+newDisp):newDisp);
+      setMiniCalcFresh(false);
+    }
+    function calcOperator(op){
+      var cur=parseFloat(miniCalcDisp)||0;
+      if(miniCalcOp&&miniCalcStored!==null&&!miniCalcFresh){
+        var r=miniCalcOp==='+'?miniCalcStored+cur:miniCalcOp==='-'?miniCalcStored-cur:miniCalcOp==='*'?miniCalcStored*cur:cur!==0?miniCalcStored/cur:0;
+        setMiniCalcStored(r);setMiniCalcDisp(String(r));setMiniCalcExpr(String(r)+' '+calcOpLabel(op));
+      }else{
+        setMiniCalcStored(cur);setMiniCalcExpr(String(cur)+' '+calcOpLabel(op));
       }
-      else if(v==='='){
-        if(o&&s!==null){
-          var cur2=parseFloat(d)||0;
-          var res=o==='+'?s+cur2:o==='-'?s-cur2:o==='×'?s*cur2:cur2!==0?s/cur2:0;
-          var rounded=Math.round(res*1e10)/1e10;
-          /* expr already contains the live second operand (kept in sync as digits are typed below) */
-          setMiniCalcExpr(miniCalcExpr+' =');
-          setMiniCalcDisp(String(rounded));setMiniCalcOp(null);setMiniCalcStored(null);setMiniCalcFresh(false);
-        }
-      } else {
-        if(v==='.'&&d.indexOf('.')!==-1&&!fr)return;
-        var newDisp=(fr||d==='0')?(v==='.'?'0.':v):d+v;
-        setMiniCalcDisp(newDisp);
-        setMiniCalcExpr(o?(String(s)+' '+o+' '+newDisp):newDisp);
-        setMiniCalcFresh(false);
+      setMiniCalcOp(op);setMiniCalcFresh(true);
+    }
+    function calcClear(){setMiniCalcDisp('0');setMiniCalcOp(null);setMiniCalcStored(null);setMiniCalcFresh(false);setMiniCalcExpr('');}
+    function calcBackspace(){
+      var d=miniCalcDisp;
+      if(d.length<=1||(d.length===2&&d.charAt(0)==='-')){setMiniCalcDisp('0');setMiniCalcFresh(true);}
+      else{setMiniCalcDisp(d.slice(0,-1));}
+    }
+    function calcFinalValue(){
+      if(miniCalcOp&&miniCalcStored!==null){
+        var cur=parseFloat(miniCalcDisp)||0;
+        var res=miniCalcOp==='+'?miniCalcStored+cur:miniCalcOp==='-'?miniCalcStored-cur:miniCalcOp==='*'?miniCalcStored*cur:cur!==0?miniCalcStored/cur:0;
+        return Math.round(res*1e10)/1e10;
       }
+      return parseFloat(miniCalcDisp)||0;
+    }
+    function calcCommit(){
+      var str=String(calcFinalValue());
+      if(calcTarget==='crypto')setCryptoAmt(str);else setAmount(str);
+      setCalcPopup(false);
     }
     var cm=useState(false);var cryptoMode=cm[0];var setCryptoMode=cm[1];
     var fc2=useState('USD');var fromCurr=fc2[0];var setFromCurr=fc2[1];
@@ -1794,28 +1810,45 @@ function App(){
       h('div',{style:{display:'flex',alignItems:'center',gap:6,background:'#1e293b',borderRadius:14,padding:4,marginBottom:14}},
         h('button',{onClick:function(){setCryptoMode(false);},style:{flex:1,padding:'8px 0',borderRadius:10,fontSize:13,fontWeight:700,border:'none',background:!cryptoMode?'linear-gradient(135deg,#0ea5e9,#3b82f6)':'transparent',color:!cryptoMode?'#fff':'#64748b'}},'Fiat → Fiat'),
         /* Calc popup button - portrait rectangle icon center */
-        h('button',{onClick:function(){setCalcPopup(!calcPopup);},style:{width:38,height:38,borderRadius:10,background:calcPopup?'rgba(34,211,238,0.2)':'rgba(34,211,238,0.08)',border:'1px solid '+(calcPopup?'rgba(34,211,238,0.5)':'rgba(34,211,238,0.2)'),display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer'}},
+        h('button',{onClick:function(){calcPopup?setCalcPopup(false):openCalc(cryptoMode?'crypto':'fiat',cryptoMode?cryptoAmt:amount);},style:{width:38,height:38,borderRadius:10,background:calcPopup?'rgba(34,211,238,0.2)':'rgba(34,211,238,0.08)',border:'1px solid '+(calcPopup?'rgba(34,211,238,0.5)':'rgba(34,211,238,0.2)'),display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer'}},
           h(Ico,{name:'calcbig',size:18,color:'#22d3ee'})),
         h('button',{onClick:function(){setCryptoMode(true);},style:{flex:1,padding:'8px 0',borderRadius:10,fontSize:13,fontWeight:700,border:'none',background:cryptoMode?'linear-gradient(135deg,#a78bfa,#6366f1)':'transparent',color:cryptoMode?'#fff':'#64748b'}},'Crypto → Crypto')),
-      /* Mini calculator popup */
-      calcPopup&&h('div',{style:{background:'#0f172a',border:'1px solid rgba(34,211,238,0.25)',borderRadius:20,padding:16,marginBottom:12}},
-        h('div',{style:{background:'#0a0f1e',borderRadius:14,padding:'10px 16px 12px',marginBottom:10,textAlign:'right',border:'1px solid #1e293b'}},
-          h('p',{style:{fontSize:'clamp(14px,4.5vw,20px)',fontWeight:700,color:'#7dd3fc',lineHeight:1.2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minHeight:miniCalcExpr?'1.2em':0,opacity:miniCalcExpr?1:0}},miniCalcExpr||' '),
-          h('p',{style:{fontSize:miniCalcDisp.length>8?22:30,fontWeight:900,color:'#22d3ee',fontVariantNumeric:'tabular-nums',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
-            (parseFloat(miniCalcDisp)||0).toLocaleString('en-US',{maximumFractionDigits:8})||miniCalcDisp)),
-        h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}},
-          ['C','±','%','÷','7','8','9','×','4','5','6','-','1','2','3','+','DEL','0','.','='].map(function(btn){
-            var isOp=['+','-','×','÷'].includes(btn);
-            var isEq=btn==='=';
-            var isUtil=['C','±','%','DEL'].includes(btn);
-            return h('button',{key:btn,onClick:function(){miniCalcPress(btn);},style:{
-              padding:'12px 4px',minHeight:44,
-              background:isEq?'linear-gradient(135deg,#22d3ee,#3b82f6)':isOp?'rgba(34,211,238,0.15)':isUtil?'#334155':'#1e293b',
-              color:isEq?'#0a0f1e':isOp?'#22d3ee':'#f1f5f9',
-              border:isOp?'1px solid rgba(34,211,238,0.2)':'none',
-              borderRadius:10,fontWeight:700,fontSize:btn==='DEL'?11:16,cursor:'pointer'
-            }},btn);
-          }))),),
+      /* Amount calculator keypad -- bottom sheet, opens from either Amount field */
+      calcPopup&&h('div',{style:{position:'fixed',inset:0,zIndex:520,display:'flex',flexDirection:'column'}},
+        h('div',{style:{position:'absolute',inset:0,background:'rgba(0,0,0,0.75)'},onClick:function(){setCalcPopup(false);}}),
+        h('div',Object.assign({style:{position:'relative',marginTop:'auto',background:'#0f172a',borderRadius:'24px 24px 0 0',borderTop:'1px solid rgba(34,211,238,0.25)',padding:'8px 14px calc(14px + env(safe-area-inset-bottom))',display:'flex',flexDirection:'column',gap:8,transition:'transform 0.1s'}},swipeClose(function(){setCalcPopup(false);})),
+          h('div',{style:{width:36,height:4,borderRadius:2,background:'#334155',margin:'0 auto 4px'}}),
+          h('p',{style:{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:0.8}},calcTarget==='crypto'?'Amount':'Amount ('+fromCurr+')'),
+          h('div',{style:{background:'#0a0f1e',borderRadius:14,padding:'10px 16px 12px',marginBottom:4,textAlign:'right',border:'1px solid #1e293b'}},
+            h('p',{style:{fontSize:'clamp(14px,4.5vw,20px)',fontWeight:700,color:'#7dd3fc',lineHeight:1.2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minHeight:miniCalcExpr?'1.2em':0,opacity:miniCalcExpr?1:0}},miniCalcExpr||' '),
+            h('p',{style:{fontSize:miniCalcDisp.length>8?24:32,fontWeight:900,color:'#22d3ee',fontVariantNumeric:'tabular-nums',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+              (parseFloat(miniCalcDisp)||0).toLocaleString('en-US',{maximumFractionDigits:8})||miniCalcDisp)),
+          [
+            [{k:'7'},{k:'8'},{k:'9'},{k:'AC',t:'util'},{k:'DEL',t:'util'}],
+            [{k:'4'},{k:'5'},{k:'6'},{k:'/',t:'op'},{k:'*',t:'op'}],
+            [{k:'1'},{k:'2'},{k:'3'},{k:'-',t:'op'},{k:'+',t:'op'}],
+            [{k:'0',span:2},{k:'.'},{k:'Done',t:'done',span:2}]
+          ].map(function(row,ri){
+            return h('div',{key:ri,style:{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6}},
+              row.map(function(btn){
+                var isOp=btn.t==='op',isUtil=btn.t==='util',isDone=btn.t==='done';
+                var label=isOp?calcOpLabel(btn.k):btn.k==='DEL'?String.fromCharCode(9003):btn.k;
+                return h('button',{key:btn.k,onClick:function(){
+                  if(btn.k==='AC')calcClear();
+                  else if(btn.k==='DEL')calcBackspace();
+                  else if(isOp)calcOperator(btn.k);
+                  else if(isDone)calcCommit();
+                  else calcDigit(btn.k);
+                },style:{
+                  gridColumn:btn.span?'span '+btn.span:'span 1',
+                  padding:'13px 4px',minHeight:46,
+                  background:isDone?'linear-gradient(135deg,#22d3ee,#3b82f6)':isOp?'rgba(34,211,238,0.15)':isUtil?'#334155':'#1e293b',
+                  color:isDone?'#0a0f1e':isOp?'#22d3ee':'#f1f5f9',
+                  border:isOp?'1px solid rgba(34,211,238,0.2)':'none',
+                  borderRadius:11,fontWeight:900,fontSize:isDone?15:label.length>1?13:18,cursor:'pointer'
+                }},label);
+              }));
+          }))),
 
       /* ---- FIAT MODE ---- */
       !cryptoMode&&h('div',null,
@@ -1825,10 +1858,10 @@ function App(){
           h('button',{onClick:function(){setManageFiatOpen(true);},style:{display:'flex',alignItems:'center',gap:6,background:'rgba(34,211,238,0.1)',border:'1px solid rgba(34,211,238,0.25)',borderRadius:10,padding:'6px 12px',cursor:'pointer'}},
             h(Ico,{name:'plus',size:12,color:'#22d3ee'}),
             h('span',{style:{fontSize:11,fontWeight:700,color:'#22d3ee'}},'Add / Remove'))),
-        h('div',{style:{background:'#1e293b',border:'1px solid #334155',borderRadius:16,padding:'12px 16px',marginBottom:10}},
+        h('div',{onClick:function(){openCalc('fiat',amount);},style:{background:'#1e293b',border:'1px solid #334155',borderRadius:16,padding:'12px 16px',marginBottom:10,cursor:'pointer'}},
           h('p',{style:Object.assign({},LBL,{marginBottom:6})},'Amount'),
-          h('input',{type:'text',inputMode:'decimal',pattern:'[0-9.]*',value:amount,onChange:function(e){setAmount(e.target.value.replace(/[^0-9.]/g,''));},placeholder:'0',
-            style:{width:'100%',background:'transparent',border:'none',outline:'none',color:'#f1f5f9',fontSize:28,fontWeight:900,padding:0}})),
+          h('input',{type:'text',inputMode:'none',readOnly:true,value:amount,placeholder:'0',
+            style:{width:'100%',background:'transparent',border:'none',outline:'none',color:'#f1f5f9',fontSize:28,fontWeight:900,padding:0,caretColor:'transparent'}})),
         /* Compact from/swap/to row */
         h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:10}},
           h('button',{onClick:function(){setFromOpen(true);},style:{flex:1,display:'flex',alignItems:'center',gap:6,background:'#1e293b',border:'1px solid #334155',borderRadius:14,padding:'10px 12px',cursor:'pointer',minWidth:0}},
@@ -1877,10 +1910,10 @@ function App(){
           h('button',{onClick:function(){setManageCryptoOpen(true);},style:{display:'flex',alignItems:'center',gap:6,background:'rgba(167,139,250,0.1)',border:'1px solid rgba(167,139,250,0.25)',borderRadius:10,padding:'6px 12px',cursor:'pointer'}},
             h(Ico,{name:'plus',size:12,color:'#a78bfa'}),
             h('span',{style:{fontSize:11,fontWeight:700,color:'#a78bfa'}},'Add / Remove'))),
-        h('div',{style:{background:'#1e293b',border:'1px solid #334155',borderRadius:16,padding:'12px 16px',marginBottom:10}},
+        h('div',{onClick:function(){openCalc('crypto',cryptoAmt);},style:{background:'#1e293b',border:'1px solid #334155',borderRadius:16,padding:'12px 16px',marginBottom:10,cursor:'pointer'}},
           h('p',{style:Object.assign({},LBL,{marginBottom:6})},'Amount'),
-          h('input',{type:'text',inputMode:'decimal',pattern:'[0-9.]*',value:cryptoAmt,onChange:function(e){setCryptoAmt(e.target.value.replace(/[^0-9.]/g,''));},placeholder:'1',
-            style:{width:'100%',background:'transparent',border:'none',outline:'none',color:'#f1f5f9',fontSize:28,fontWeight:900,padding:0}})),
+          h('input',{type:'text',inputMode:'none',readOnly:true,value:cryptoAmt,placeholder:'1',
+            style:{width:'100%',background:'transparent',border:'none',outline:'none',color:'#f1f5f9',fontSize:28,fontWeight:900,padding:0,caretColor:'transparent'}})),
         h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:10}},
           h('button',{onClick:function(){setCoinSheetFrom(true);setCoinSheetOpen(true);},style:{flex:1,display:'flex',alignItems:'center',gap:8,background:'#1e293b',border:'1px solid #334155',borderRadius:14,padding:'10px 12px',cursor:'pointer',minWidth:0}},
             fromCoin&&fromCoin.image?h('img',{src:fromCoin.image,style:{width:22,height:22,borderRadius:11,flexShrink:0}}):h('div',{style:{width:22,height:22,borderRadius:11,background:'#334155',flexShrink:0}}),
@@ -1932,7 +1965,7 @@ function App(){
                     isActiveTo&&h('span',{style:{fontSize:8,color:'#a78bfa',fontWeight:700,flexShrink:0}},'TO')),
                   h('div',{onTouchStart:cryptoDragStart(c.id),onTouchMove:cryptoDragMove,onTouchEnd:cryptoDragEnd,style:{width:22,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:isDragging?'rgba(167,139,250,0.2)':'#1e293b',border:'1px solid '+(isDragging?'rgba(167,139,250,0.5)':'#334155'),borderRadius:8,touchAction:'none',cursor:'grab'}},
                     h('span',{style:{color:'#64748b',fontSize:12,letterSpacing:-1,lineHeight:1}},'⠿')));
-              }))));
+              })))));
   }
 
   function NewsPage(){

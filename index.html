@@ -363,200 +363,8 @@ function AlertSheet(p){
 }
 
 /* ==== MAIN APP ==== */
-function App(){
-  var ps=useState('market');var page=ps[0];var setPage=ps[1];
-  var hs=useState(false);var hide=hs[0];var setHide=hs[1];
-  var cs=useState([]);var coins=cs[0];var setCoins=cs[1];
-  var ts=useState({volume:[],gainers:[],losers:[]});var top=ts[0];var setTop=ts[1];
-  var cl=useState(true);var cLoad=cl[0];var setCLoad=cl[1];
-  var ua=useState('');var upAt=ua[0];var setUpAt=ua[1];
-  var mt=useState('volume');var mTab=mt[0];var setMTab=mt[1];
-  var wls=useState(LS.get('wl')||[]);var wl=wls[0];var setWlR=wls[1];
-  var sss=useState('');var ss=sss[0];var setSs=sss[1];
-  var sos=useState(false);var so=sos[0];var setSo=sos[1];
-  var ns=useState([]);var news=ns[0];var setNews=ns[1];
-  var nl=useState(true);var nLoad=nl[0];var setNLoad=nl[1];
-  var oa=useState(null);var openArt=oa[0];var setOpenArt=oa[1];
-  var bu=useState(null);var browserUrl=bu[0];var setBrowserUrl=bu[1];
-  var fm=useState('long');var fMode=fm[0];var setFMode=fm[1];
-  var fl=useState(10);var fLev=fl[0];var setFLev=fl[1];
-  var fe=useState('81000');var fEnt=fe[0];var setFEnt=fe[1];
-  var fx=useState('85050');var fEx=fx[0];var setFEx=fx[1];
-  var fi=useState('1000');var fInv=fi[0];var setFInv=fi[1];
-  var fw=useState('5000');var fWal=fw[0];var setFWal=fw[1];
-  var fc=useState(null);var fCoin=fc[0];var setFCoin=fc[1];
-  var fo=useState(false);var fOpen=fo[0];var setFOpen=fo[1];
-  var fsr=useState('');var fSrc=fsr[0];var setFSrc=fsr[1];
-  var lve=useState(false);var levEditing=lve[0];var setLevEditing=lve[1];
-  var lvi=useState('10');var levInput=lvi[0];var setLevInput=lvi[1];
-  var afo=useState(false);var afOpen=afo[0];var setAfOpen=afo[1];
-  var afc2=useState(null);var afCoinSel=afc2[0];var setAfCoinSel=afc2[1];
-  var afp2=useState('');var afPrice=afp2[0];var setAfPrice=afp2[1];
-  var afd2=useState('above');var afDir=afd2[0];var setAfDir=afd2[1];
-  var afq2=useState('');var afQ=afq2[0];var setAfQ=afq2[1];
-  var afs2=useState(false);var afCoinSheet=afs2[0];var setAfCoinSheet=afs2[1];
-  var ccs=useState({disp:'0',op:null,stored:null,fresh:false,expr:''});var calcS=ccs[0];var setCalcS=ccs[1];
-  var prt=useState(LS.get('portfolio')||[]);var port=prt[0];var setPortR=prt[1];
-  var po=useState(false);var pOpen=po[0];var setPOpen=po[1];
-  var ps2=useState('');var pSrc=ps2[0];var setPSrc=ps2[1];
-  var als=useState(LS.get('alerts')||[]);var alerts=als[0];var setAlertsR=als[1];
-  var ash=useState(false);var aSheetOpen=ash[0];var setASheetOpen=ash[1];
-  var tst=useState(null);var toast=tst[0];var setToast=tst[1];
-  var sm=useState(null);var savedMsg=sm[0];var setSavedMsg=sm[1];
-  var stg=useState(false);var showSettings=stg[0];var setShowSettings=stg[1];
-
-  var apik=useState(LS.get('apiKeys')||{binance_key:'',binance_secret:''});var apiKeys=apik[0];var setApiKeys=apik[1];
-  var nots=useState(LS.get('notifSettings')||{newsAlerts:true,priceAlerts:true});var notifSettings=nots[0];var setNotifSettings=nots[1];
-  var secm=useState(LS.get('secMode')||'none');var secMode=secm[0];var setSecMode=secm[1];
-  var npage=useState(0);var newsPage=npage[0];var setNewsPage=npage[1];
-  var ntab=useState('crypto');var newsTab=ntab[0];var setNewsTab=ntab[1];
-
-  function setWl(v){var n=typeof v==='function'?v(wl):v;setWlR(n);LS.set('wl',n);}
-  function setPort(v){var n=typeof v==='function'?v(port):v;setPortR(n);LS.set('portfolio',n);}
-  function setAlerts(v){var n=typeof v==='function'?v(alerts):v;setAlertsR(n);LS.set('alerts',n);}
-
-  function playAlert(type){
-    try{
-      var ctx=getAudioCtx();
-      if(!ctx)return;
-      if(type==='chime'){[523,659,784].forEach(function(f,i){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,ctx.currentTime+i*0.2);g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+i*0.2+0.02);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.2+0.4);o.start(ctx.currentTime+i*0.2);o.stop(ctx.currentTime+i*0.2+0.4);});}
-      else if(type==='beep'){[0,0.25].forEach(function(d){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='square';o.frequency.value=1000;g.gain.setValueAtTime(0.3,ctx.currentTime+d);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.18);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.18);});}
-      else if(type==='alarm'){for(var k=0;k<4;k++){(function(k){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sawtooth';var t0=ctx.currentTime+k*0.6;o.frequency.setValueAtTime(400,t0);o.frequency.linearRampToValueAtTime(900,t0+0.5);g.gain.setValueAtTime(0.35,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+0.55);o.start(t0);o.stop(t0+0.55);})(k);}if(navigator.vibrate)navigator.vibrate([300,150,300,150,300]);}
-      else if(type==='bell'){var o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.type='sine';o2.frequency.value=440;g2.gain.setValueAtTime(0.5,ctx.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.2);o2.start(ctx.currentTime);o2.stop(ctx.currentTime+1.2);}
-      if(type==='vibrate'||type==='vibrate_silent'){if(navigator.vibrate)navigator.vibrate([200,100,200,100,200]);}
-    }catch(e){}
-  }
-
-  var fetchCoins=useCallback(function(){
-    setCLoad(true);
-    Promise.all([1,2,3,4].map(function(pg){
-      return fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page='+pg+'&sparkline=false&price_change_percentage=24h')
-        .then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
-    })).then(function(pages){
-      var all=[].concat.apply([],pages).filter(function(c){return c.current_price&&c.id;});
-      if(all.length>0){
-        setCoins(all);
-        setTop({
-          volume:all.slice().sort(function(a,b){return(b.total_volume||0)-(a.total_volume||0);}).slice(0,5),
-          gainers:all.filter(function(c){return c.price_change_percentage_24h!=null;}).sort(function(a,b){return b.price_change_percentage_24h-a.price_change_percentage_24h;}).slice(0,5),
-          losers:all.filter(function(c){return c.price_change_percentage_24h!=null;}).sort(function(a,b){return a.price_change_percentage_24h-b.price_change_percentage_24h;}).slice(0,5)
-        });
-        setUpAt(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
-        setAlertsR(function(prev){
-          var updated=prev.map(function(a){
-            if(!a.active||a.triggered)return a;
-            var coin=all.find(function(c){return c.id===a.coinId;});
-            if(!coin)return a;
-            var hit=(a.direction==='above'&&coin.current_price>=a.targetPrice)||(a.direction==='below'&&coin.current_price<=a.targetPrice);
-            if(hit){setToast(Object.assign({},a));playAlert(a.type);return Object.assign({},a,{triggered:true});}
-            return a;
-          });
-          LS.set('alerts',updated);
-          return updated;
-        });
-      }
-      setCLoad(false);
-    });
-  },[]);
-
-  var fetchNews=useCallback(function(){
-    setNLoad(true);
-    fetch('https://api.blockchair.com/news?limit=60&q=language(en)')
-      .then(function(r){return r.ok?r.json():null;})
-      .then(function(d){
-        if(d&&d.data&&d.data.length){
-          var mapped=d.data.filter(function(a){return a.title&&a.link;}).map(function(a){
-            var tag=(a.tags||'').split(',')[0]||'';
-            return {title:a.title,url:a.link,source:{title:a.source||'News'},currencies:tag?[{code:tag.trim().slice(0,5).toUpperCase()}]:null,published_at:(a.time||'').replace(' ','T')+'Z',body:a.description||''};
-          });
-          if(mapped.length)setNews(mapped.slice(0,50));
-        }
-      })
-      .catch(function(){}).finally(function(){setNLoad(false);});
-  },[]);
-
-  useEffect(function(){fetchCoins();fetchNews();},[]);
-  useEffect(function(){
-    var legacy=LS.get('priceAlerts');
-    if(legacy&&Array.isArray(legacy)&&legacy.length){
-      setAlertsR(function(prev){
-        var existing={};prev.forEach(function(a){existing[a.id]=1;});
-        var merged=prev.concat(legacy.filter(function(a){return !existing[a.id];}).map(function(a){
-          return {id:a.id||uid(),coinId:a.coin,coinName:a.name,symbol:a.symbol,image:a.image,
-            targetPrice:a.target,direction:a.dir,type:'alarm',active:true,triggered:!!a.triggered};
-        }));
-        LS.set('alerts',merged);
-        return merged;
-      });
-      LS.set('priceAlerts',[]);
-    }
-  },[]);
-  useEffect(function(){
-    var pi=setInterval(fetchCoins,90000);
-    var ni=setInterval(fetchNews,300000);
-    return function(){clearInterval(pi);clearInterval(ni);};
-  },[]);
-  useEffect(function(){if(toast){var t=setTimeout(function(){setToast(null);},6000);return function(){clearTimeout(t);};}});
-
-  /* Shared swipe-down-to-close for bottom sheets */
-  function swipeClose(closeFn){
-    return {
-      onTouchStart:function(e){e.currentTarget._sy=e.touches[0].clientY;e.currentTarget._moved=false;},
-      onTouchMove:function(e){
-        var dy=e.touches[0].clientY-(e.currentTarget._sy||0);
-        if(dy>0){e.currentTarget.style.transform='translateY('+dy+'px)';e.currentTarget._moved=true;}
-      },
-      onTouchEnd:function(e){
-        var dy=parseFloat((e.currentTarget.style.transform||'').replace(/[^\d.]/g,''))||0;
-        if(dy>80){e.currentTarget.style.transform='';closeFn();}
-        else{e.currentTarget.style.transform='';}
-      }
-    };
-  }
-
-  function filterCoins(q,excl){
-    excl=excl||[];
-    var ql=(q||'').toLowerCase();
-    return coins.filter(function(c){return excl.indexOf(c.id)===-1&&(c.name.toLowerCase().indexOf(ql)!==-1||c.symbol.toLowerCase().indexOf(ql)!==-1);}).slice(0,200);
-  }
-
-  var feN=numF(fEnt),fxN=numF(fEx),fiN=numF(fInv),fwN=numF(fWal);
-  var fcalc=(function(){
-    if(!feN||!fiN||!fwN)return{pos:0,pnl:0,pnlPct:0,liq:0,margin:0};
-    var pos=fiN*fLev,diff=fMode==='long'?fxN-feN:feN-fxN,pnl=(diff/feN)*pos;
-    var liq=fMode==='long'?Math.max(0,feN-fwN/(pos/feN)):feN+fwN/(pos/feN);
-    return{pos:pos,pnl:pnl,pnlPct:(pnl/fiN)*100,liq:liq,margin:(fiN/fwN)*100};
-  })();
-
-  var pc=(function(){
-    var val=0,inv=0;
-    port.forEach(function(c){val+=(parseFloat(c.amount)||0)*(parseFloat(c.currentPrice)||0);inv+=(parseFloat(c.amount)||0)*(parseFloat(c.buyPrice)||0);});
-    return{val:val,inv:inv,profit:val-inv,pct:inv>0?((val-inv)/inv)*100:0};
-  })();
-
-  var CARD={background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:16,marginBottom:10};
-  var SB={display:'flex',alignItems:'center',justifyContent:'space-between'};
-  var LBL={fontSize:10,color:'#64748b',textTransform:'uppercase',letterSpacing:0.8,marginBottom:4};
-  var HD={fontSize:15,fontWeight:900,color:'#f1f5f9',marginBottom:10};
-  var ROW={display:'flex',alignItems:'center',gap:10};
-  var SIGS=['STRONG BUY','BUY','HOLD','SELL','STRONG SELL'];
-  var SIGC={'STRONG BUY':'#10b981','BUY':'#22c55e','HOLD':'#f59e0b','SELL':'#f97316','STRONG SELL':'#ef4444'};
-  var NAV=[{id:'market',label:'Market',icon:'bar'},{id:'futures',label:'Futures',icon:'zap'},{id:'portfolio',label:'Portfolio',icon:'briefcase'},{id:'convert',label:'Convert',icon:'swap'},{id:'news',label:'News',icon:'rss'},{id:'shop',label:'Buy',icon:'bitcoin'}];
-
-  var FALLBACK=[
-    {title:'Bitcoin Holds Above $81K',source:{title:'CoinDesk'},currencies:[{code:'BTC'}],_date:'May 7, 2025',url:'https://coindesk.com',body:'Bitcoin continues to hold above $81,000 as institutional demand stays strong. ETF inflows have remained positive with major asset managers continuing to accumulate.'},
-    {title:'Ethereum L2 Volumes Hit New ATH',source:{title:'The Block'},currencies:[{code:'ETH'}],_date:'May 7, 2025',url:'https://theblock.co',body:'Ethereum Layer 2 networks surpassed previous records. Arbitrum and Base are leading with combined daily volume exceeding $2 billion.'},
-    {title:'Solana Overtakes ETH in DEX Volume',source:{title:'DeFiLlama'},currencies:[{code:'SOL'}],_date:'May 6, 2025',url:'https://defillama.com',body:'Solana-based DEXes processed more daily volume than Ethereum for the third consecutive week. Jupiter alone accounted for over $800M.'},
-    {title:'XRP Futures OI Surges 40%',source:{title:'Cointelegraph'},currencies:[{code:'XRP'}],_date:'May 6, 2025',url:'https://cointelegraph.com',body:'XRP perpetual futures open interest climbed 40% this week amid renewed ETF speculation.'},
-    {title:'BNB Chain Launches AI DeFi Suite',source:{title:'BNB Blog'},currencies:[{code:'BNB'}],_date:'May 5, 2025',url:'https://bnbchain.org',body:'Binance Smart Chain released a new suite of AI-powered DeFi tools to simplify yield optimisation.'},
-    {title:'Altcoin Season Index 3-Month High',source:{title:'TradingView'},currencies:[{code:'ALT'}],_date:'May 5, 2025',url:'https://tradingview.com',body:'The Altcoin Season Index has reached its highest point in three months.'},
-    {title:'Crypto Market Cap Holds Above $3T',source:{title:'CoinGecko'},currencies:[{code:'MKT'}],_date:'May 4, 2025',url:'https://coingecko.com',body:'The total cryptocurrency market capitalisation continues to hold above $3 trillion.'},
-    {title:'Dogecoin Surges on Social Momentum',source:{title:'Decrypt'},currencies:[{code:'DOGE'}],_date:'May 4, 2025',url:'https://decrypt.co',body:'DOGE gained over 18% in 48 hours amid social media activity and endorsements.'}
-  ];
-
-  /* pages rendered inline */
-  function PriceChart(){
-    var cs2=useState('bitcoin');var chartId=cs2[0];var setChartId=cs2[1];
+function PriceChart(P){
+  var coins=P.coins;var chartId=P.chartId;var setChartId=P.setChartId;
     var cd=useState(null);var chartData=cd[0];var setChartData=cd[1];
     var cl2=useState(true);var chartLoad=cl2[0];var setChartLoad=cl2[1];
     var ce=useState(null);var chartErr=ce[0];var setChartErr=ce[1];
@@ -745,6 +553,202 @@ function App(){
             })))));
   }
 
+
+function App(){
+  var ps=useState('market');var page=ps[0];var setPage=ps[1];
+  var hs=useState(false);var hide=hs[0];var setHide=hs[1];
+  var cs=useState([]);var coins=cs[0];var setCoins=cs[1];
+  var ts=useState({volume:[],gainers:[],losers:[]});var top=ts[0];var setTop=ts[1];
+  var cl=useState(true);var cLoad=cl[0];var setCLoad=cl[1];
+  var ua=useState('');var upAt=ua[0];var setUpAt=ua[1];
+  var mt=useState('volume');var mTab=mt[0];var setMTab=mt[1];
+  var wls=useState(LS.get('wl')||[]);var wl=wls[0];var setWlR=wls[1];
+  var sss=useState('');var ss=sss[0];var setSs=sss[1];
+  var sos=useState(false);var so=sos[0];var setSo=sos[1];
+  var cid=useState('bitcoin');var chartId=cid[0];var setChartId=cid[1];
+  var scrollRef=useRef(null);
+  function showCoinOnChart(id){setPage('market');setChartId(id);setTimeout(function(){if(scrollRef.current)scrollRef.current.scrollTo({top:0,behavior:'smooth'});},50);}
+  var ns=useState([]);var news=ns[0];var setNews=ns[1];
+  var nl=useState(true);var nLoad=nl[0];var setNLoad=nl[1];
+  var oa=useState(null);var openArt=oa[0];var setOpenArt=oa[1];
+  var bu=useState(null);var browserUrl=bu[0];var setBrowserUrl=bu[1];
+  var fm=useState('long');var fMode=fm[0];var setFMode=fm[1];
+  var fl=useState(10);var fLev=fl[0];var setFLev=fl[1];
+  var fe=useState('81000');var fEnt=fe[0];var setFEnt=fe[1];
+  var fx=useState('85050');var fEx=fx[0];var setFEx=fx[1];
+  var fi=useState('1000');var fInv=fi[0];var setFInv=fi[1];
+  var fw=useState('5000');var fWal=fw[0];var setFWal=fw[1];
+  var fc=useState(null);var fCoin=fc[0];var setFCoin=fc[1];
+  var fo=useState(false);var fOpen=fo[0];var setFOpen=fo[1];
+  var fsr=useState('');var fSrc=fsr[0];var setFSrc=fsr[1];
+  var lve=useState(false);var levEditing=lve[0];var setLevEditing=lve[1];
+  var lvi=useState('10');var levInput=lvi[0];var setLevInput=lvi[1];
+  var afo=useState(false);var afOpen=afo[0];var setAfOpen=afo[1];
+  var afc2=useState(null);var afCoinSel=afc2[0];var setAfCoinSel=afc2[1];
+  var afp2=useState('');var afPrice=afp2[0];var setAfPrice=afp2[1];
+  var afd2=useState('above');var afDir=afd2[0];var setAfDir=afd2[1];
+  var afq2=useState('');var afQ=afq2[0];var setAfQ=afq2[1];
+  var afs2=useState(false);var afCoinSheet=afs2[0];var setAfCoinSheet=afs2[1];
+  var ccs=useState({disp:'0',op:null,stored:null,fresh:false,expr:''});var calcS=ccs[0];var setCalcS=ccs[1];
+  var prt=useState(LS.get('portfolio')||[]);var port=prt[0];var setPortR=prt[1];
+  var po=useState(false);var pOpen=po[0];var setPOpen=po[1];
+  var ps2=useState('');var pSrc=ps2[0];var setPSrc=ps2[1];
+  var als=useState(LS.get('alerts')||[]);var alerts=als[0];var setAlertsR=als[1];
+  var ash=useState(false);var aSheetOpen=ash[0];var setASheetOpen=ash[1];
+  var tst=useState(null);var toast=tst[0];var setToast=tst[1];
+  var sm=useState(null);var savedMsg=sm[0];var setSavedMsg=sm[1];
+  var stg=useState(false);var showSettings=stg[0];var setShowSettings=stg[1];
+
+  var apik=useState(LS.get('apiKeys')||{binance_key:'',binance_secret:''});var apiKeys=apik[0];var setApiKeys=apik[1];
+  var nots=useState(LS.get('notifSettings')||{newsAlerts:true,priceAlerts:true});var notifSettings=nots[0];var setNotifSettings=nots[1];
+  var secm=useState(LS.get('secMode')||'none');var secMode=secm[0];var setSecMode=secm[1];
+  var npage=useState(0);var newsPage=npage[0];var setNewsPage=npage[1];
+  var ntab=useState('crypto');var newsTab=ntab[0];var setNewsTab=ntab[1];
+
+  function setWl(v){var n=typeof v==='function'?v(wl):v;setWlR(n);LS.set('wl',n);}
+  function setPort(v){var n=typeof v==='function'?v(port):v;setPortR(n);LS.set('portfolio',n);}
+  function setAlerts(v){var n=typeof v==='function'?v(alerts):v;setAlertsR(n);LS.set('alerts',n);}
+
+  function playAlert(type){
+    try{
+      var ctx=getAudioCtx();
+      if(!ctx)return;
+      if(type==='chime'){[523,659,784].forEach(function(f,i){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,ctx.currentTime+i*0.2);g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+i*0.2+0.02);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.2+0.4);o.start(ctx.currentTime+i*0.2);o.stop(ctx.currentTime+i*0.2+0.4);});}
+      else if(type==='beep'){[0,0.25].forEach(function(d){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='square';o.frequency.value=1000;g.gain.setValueAtTime(0.3,ctx.currentTime+d);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d+0.18);o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+0.18);});}
+      else if(type==='alarm'){for(var k=0;k<4;k++){(function(k){var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sawtooth';var t0=ctx.currentTime+k*0.6;o.frequency.setValueAtTime(400,t0);o.frequency.linearRampToValueAtTime(900,t0+0.5);g.gain.setValueAtTime(0.35,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+0.55);o.start(t0);o.stop(t0+0.55);})(k);}if(navigator.vibrate)navigator.vibrate([300,150,300,150,300]);}
+      else if(type==='bell'){var o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.type='sine';o2.frequency.value=440;g2.gain.setValueAtTime(0.5,ctx.currentTime);g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.2);o2.start(ctx.currentTime);o2.stop(ctx.currentTime+1.2);}
+      if(type==='vibrate'||type==='vibrate_silent'){if(navigator.vibrate)navigator.vibrate([200,100,200,100,200]);}
+    }catch(e){}
+  }
+
+  var fetchCoins=useCallback(function(){
+    setCLoad(true);
+    Promise.all([1,2,3,4].map(function(pg){
+      return fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page='+pg+'&sparkline=false&price_change_percentage=24h')
+        .then(function(r){return r.ok?r.json():[];}).catch(function(){return[];});
+    })).then(function(pages){
+      var all=[].concat.apply([],pages).filter(function(c){return c.current_price&&c.id;});
+      if(all.length>0){
+        setCoins(all);
+        setTop({
+          volume:all.slice().sort(function(a,b){return(b.total_volume||0)-(a.total_volume||0);}).slice(0,5),
+          gainers:all.filter(function(c){return c.price_change_percentage_24h!=null;}).sort(function(a,b){return b.price_change_percentage_24h-a.price_change_percentage_24h;}).slice(0,5),
+          losers:all.filter(function(c){return c.price_change_percentage_24h!=null;}).sort(function(a,b){return a.price_change_percentage_24h-b.price_change_percentage_24h;}).slice(0,5)
+        });
+        setUpAt(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+        setAlertsR(function(prev){
+          var updated=prev.map(function(a){
+            if(!a.active||a.triggered)return a;
+            var coin=all.find(function(c){return c.id===a.coinId;});
+            if(!coin)return a;
+            var hit=(a.direction==='above'&&coin.current_price>=a.targetPrice)||(a.direction==='below'&&coin.current_price<=a.targetPrice);
+            if(hit){setToast(Object.assign({},a));playAlert(a.type);return Object.assign({},a,{triggered:true});}
+            return a;
+          });
+          LS.set('alerts',updated);
+          return updated;
+        });
+      }
+      setCLoad(false);
+    });
+  },[]);
+
+  var fetchNews=useCallback(function(){
+    setNLoad(true);
+    fetch('https://api.blockchair.com/news?limit=60&q=language(en)')
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(d){
+        if(d&&d.data&&d.data.length){
+          var mapped=d.data.filter(function(a){return a.title&&a.link;}).map(function(a){
+            var tag=(a.tags||'').split(',')[0]||'';
+            return {title:a.title,url:a.link,source:{title:a.source||'News'},currencies:tag?[{code:tag.trim().slice(0,5).toUpperCase()}]:null,published_at:(a.time||'').replace(' ','T')+'Z',body:a.description||''};
+          });
+          if(mapped.length)setNews(mapped.slice(0,50));
+        }
+      })
+      .catch(function(){}).finally(function(){setNLoad(false);});
+  },[]);
+
+  useEffect(function(){fetchCoins();fetchNews();},[]);
+  useEffect(function(){
+    var legacy=LS.get('priceAlerts');
+    if(legacy&&Array.isArray(legacy)&&legacy.length){
+      setAlertsR(function(prev){
+        var existing={};prev.forEach(function(a){existing[a.id]=1;});
+        var merged=prev.concat(legacy.filter(function(a){return !existing[a.id];}).map(function(a){
+          return {id:a.id||uid(),coinId:a.coin,coinName:a.name,symbol:a.symbol,image:a.image,
+            targetPrice:a.target,direction:a.dir,type:'alarm',active:true,triggered:!!a.triggered};
+        }));
+        LS.set('alerts',merged);
+        return merged;
+      });
+      LS.set('priceAlerts',[]);
+    }
+  },[]);
+  useEffect(function(){
+    var pi=setInterval(fetchCoins,90000);
+    var ni=setInterval(fetchNews,300000);
+    return function(){clearInterval(pi);clearInterval(ni);};
+  },[]);
+  useEffect(function(){if(toast){var t=setTimeout(function(){setToast(null);},6000);return function(){clearTimeout(t);};}});
+
+  /* Shared swipe-down-to-close for bottom sheets */
+  function swipeClose(closeFn){
+    return {
+      onTouchStart:function(e){e.currentTarget._sy=e.touches[0].clientY;e.currentTarget._moved=false;},
+      onTouchMove:function(e){
+        var dy=e.touches[0].clientY-(e.currentTarget._sy||0);
+        if(dy>0){e.currentTarget.style.transform='translateY('+dy+'px)';e.currentTarget._moved=true;}
+      },
+      onTouchEnd:function(e){
+        var dy=parseFloat((e.currentTarget.style.transform||'').replace(/[^\d.]/g,''))||0;
+        if(dy>80){e.currentTarget.style.transform='';closeFn();}
+        else{e.currentTarget.style.transform='';}
+      }
+    };
+  }
+
+  function filterCoins(q,excl){
+    excl=excl||[];
+    var ql=(q||'').toLowerCase();
+    return coins.filter(function(c){return excl.indexOf(c.id)===-1&&(c.name.toLowerCase().indexOf(ql)!==-1||c.symbol.toLowerCase().indexOf(ql)!==-1);}).slice(0,200);
+  }
+
+  var feN=numF(fEnt),fxN=numF(fEx),fiN=numF(fInv),fwN=numF(fWal);
+  var fcalc=(function(){
+    if(!feN||!fiN||!fwN)return{pos:0,pnl:0,pnlPct:0,liq:0,margin:0};
+    var pos=fiN*fLev,diff=fMode==='long'?fxN-feN:feN-fxN,pnl=(diff/feN)*pos;
+    var liq=fMode==='long'?Math.max(0,feN-fwN/(pos/feN)):feN+fwN/(pos/feN);
+    return{pos:pos,pnl:pnl,pnlPct:(pnl/fiN)*100,liq:liq,margin:(fiN/fwN)*100};
+  })();
+
+  var pc=(function(){
+    var val=0,inv=0;
+    port.forEach(function(c){val+=(parseFloat(c.amount)||0)*(parseFloat(c.currentPrice)||0);inv+=(parseFloat(c.amount)||0)*(parseFloat(c.buyPrice)||0);});
+    return{val:val,inv:inv,profit:val-inv,pct:inv>0?((val-inv)/inv)*100:0};
+  })();
+
+  var CARD={background:'#1e293b',border:'1px solid #334155',borderRadius:20,padding:16,marginBottom:10};
+  var SB={display:'flex',alignItems:'center',justifyContent:'space-between'};
+  var LBL={fontSize:10,color:'#64748b',textTransform:'uppercase',letterSpacing:0.8,marginBottom:4};
+  var HD={fontSize:15,fontWeight:900,color:'#f1f5f9',marginBottom:10};
+  var ROW={display:'flex',alignItems:'center',gap:10};
+  var SIGS=['STRONG BUY','BUY','HOLD','SELL','STRONG SELL'];
+  var SIGC={'STRONG BUY':'#10b981','BUY':'#22c55e','HOLD':'#f59e0b','SELL':'#f97316','STRONG SELL':'#ef4444'};
+  var NAV=[{id:'market',label:'Market',icon:'bar'},{id:'futures',label:'Futures',icon:'zap'},{id:'portfolio',label:'Portfolio',icon:'briefcase'},{id:'convert',label:'Convert',icon:'swap'},{id:'news',label:'News',icon:'rss'},{id:'shop',label:'Buy',icon:'bitcoin'}];
+
+  var FALLBACK=[
+    {title:'Bitcoin Holds Above $81K',source:{title:'CoinDesk'},currencies:[{code:'BTC'}],_date:'May 7, 2025',url:'https://coindesk.com',body:'Bitcoin continues to hold above $81,000 as institutional demand stays strong. ETF inflows have remained positive with major asset managers continuing to accumulate.'},
+    {title:'Ethereum L2 Volumes Hit New ATH',source:{title:'The Block'},currencies:[{code:'ETH'}],_date:'May 7, 2025',url:'https://theblock.co',body:'Ethereum Layer 2 networks surpassed previous records. Arbitrum and Base are leading with combined daily volume exceeding $2 billion.'},
+    {title:'Solana Overtakes ETH in DEX Volume',source:{title:'DeFiLlama'},currencies:[{code:'SOL'}],_date:'May 6, 2025',url:'https://defillama.com',body:'Solana-based DEXes processed more daily volume than Ethereum for the third consecutive week. Jupiter alone accounted for over $800M.'},
+    {title:'XRP Futures OI Surges 40%',source:{title:'Cointelegraph'},currencies:[{code:'XRP'}],_date:'May 6, 2025',url:'https://cointelegraph.com',body:'XRP perpetual futures open interest climbed 40% this week amid renewed ETF speculation.'},
+    {title:'BNB Chain Launches AI DeFi Suite',source:{title:'BNB Blog'},currencies:[{code:'BNB'}],_date:'May 5, 2025',url:'https://bnbchain.org',body:'Binance Smart Chain released a new suite of AI-powered DeFi tools to simplify yield optimisation.'},
+    {title:'Altcoin Season Index 3-Month High',source:{title:'TradingView'},currencies:[{code:'ALT'}],_date:'May 5, 2025',url:'https://tradingview.com',body:'The Altcoin Season Index has reached its highest point in three months.'},
+    {title:'Crypto Market Cap Holds Above $3T',source:{title:'CoinGecko'},currencies:[{code:'MKT'}],_date:'May 4, 2025',url:'https://coingecko.com',body:'The total cryptocurrency market capitalisation continues to hold above $3 trillion.'},
+    {title:'Dogecoin Surges on Social Momentum',source:{title:'Decrypt'},currencies:[{code:'DOGE'}],_date:'May 4, 2025',url:'https://decrypt.co',body:'DOGE gained over 18% in 48 hours amid social media activity and endorsements.'}
+  ];
+
+  /* pages rendered inline */
   function MarketPage(){
     var tc=top[mTab]||[];
     var QUICK=[
@@ -759,7 +763,7 @@ function App(){
     ];
     return h('div',null,
       /* Chart */
-      h(PriceChart,null),
+      h(PriceChart,{coins:coins,chartId:chartId,setChartId:setChartId}),
       /* 12-button grid: 8 nav + 4 tools — all identical size */
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:16}},
         QUICK.concat([
@@ -790,7 +794,7 @@ function App(){
           ?h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:12,padding:'40px 0'}},h(Ico,{name:'alert',size:26,color:'#f59e0b'}),h('p',{style:{color:'#64748b',fontSize:14}},'Could not load'),h('button',{onClick:fetchCoins,style:{background:'#0ea5e9',color:'#fff',border:'none',borderRadius:16,padding:'10px 24px',fontWeight:700,fontSize:14}},'Retry'))
           :tc.map(function(c,i){
               var chg=c.price_change_percentage_24h||0;
-              return h('div',{key:c.id,style:Object.assign({},CARD,{display:'flex',alignItems:'center',gap:12})},
+              return h('div',{key:c.id,onClick:function(){showCoinOnChart(c.id);},style:Object.assign({},CARD,{display:'flex',alignItems:'center',gap:12,cursor:'pointer'})},
                 h('span',{style:{color:'#334155',fontWeight:900,fontSize:13,width:16,textAlign:'center',flexShrink:0}},i+1),
                 c.image?h('img',{src:c.image,alt:'',style:{width:36,height:36,borderRadius:18,flexShrink:0}}):h(Avatar,{sym:c.symbol,size:36}),
                 h('div',{style:{flex:1,minWidth:0}},
@@ -811,12 +815,12 @@ function App(){
         ?h('div',{style:Object.assign({},CARD,{textAlign:'center',padding:'32px 20px'})},h('p',{style:{color:'#475569',fontSize:14}},'Add coins to track signals'))
         :wl.map(function(w){
             var wchg=w.price_change_percentage_24h||0,sc=SIGC[w.signal]||'#64748b';
-            return h('div',{key:w.id,style:CARD},
+            return h('div',{key:w.id,onClick:function(){showCoinOnChart(w.id);},style:Object.assign({},CARD,{cursor:'pointer'})},
               h('div',{style:Object.assign({},SB,{marginBottom:12})},
                 h('div',{style:ROW},
                   w.image?h('img',{src:w.image,alt:'',style:{width:32,height:32,borderRadius:16}}):h(Avatar,{sym:w.symbol,size:32}),
                   h('div',null,h('p',{style:{fontWeight:700,fontSize:15,color:'#f1f5f9'}},w.name),h('p',{style:{fontSize:12,color:'#64748b'}},(w.symbol||'?').toUpperCase()))),
-                h('button',{onClick:function(){setWl(function(prev){return prev.filter(function(x){return x.id!==w.id;});});},style:{background:'none',border:'none',padding:6}},h(Ico,{name:'x',size:15,color:'#475569'}))),
+                h('button',{onClick:function(e){e.stopPropagation();setWl(function(prev){return prev.filter(function(x){return x.id!==w.id;});});},style:{background:'none',border:'none',padding:6}},h(Ico,{name:'x',size:15,color:'#475569'}))),
               h('div',{style:SB},
                 h('div',null,h('p',{style:{fontSize:22,fontWeight:900,color:'#f1f5f9'}},'$'+fmtP(w.current_price)),h('p',{style:{fontSize:13,fontWeight:600,color:wchg>=0?'#34d399':'#f87171',marginTop:2}},wchg>=0?'+':'',wchg.toFixed(2)+'% 24h')),
                 h('div',{style:{textAlign:'right'}},h('p',{style:{fontSize:11,color:'#64748b',marginBottom:4}},'RSI '+w.rsi+' · '+w.confidence+'%'),h('span',{style:{fontSize:11,fontWeight:900,padding:'4px 10px',borderRadius:8,background:sc+'20',border:'1px solid '+sc+'40',color:sc}},w.signal),h('p',{style:{fontSize:9,color:'#475569',marginTop:3}},w.signalTime||''))));
@@ -2498,14 +2502,14 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.2')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.3')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),
         h('button',{onClick:function(){setShowSettings(true);},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'gear',size:15,color:'#64748b'})))),
-    h('div',{style:{flex:1,overflowY:page==='calc'?'hidden':'auto',WebkitOverflowScrolling:'touch',overscrollBehavior:'contain'}},
+    h('div',{ref:scrollRef,style:{flex:1,overflowY:page==='calc'?'hidden':'auto',WebkitOverflowScrolling:'touch',overscrollBehavior:'contain'}},
       h('div',{style:page==='calc'?{padding:'6px 12px 10px',height:'100%',boxSizing:'border-box',display:'flex',flexDirection:'column'}:{padding:'0 16px 110px'}},
-        page==='market'&&h(MarketPage,null),
+        page==='market'&&MarketPage(),
         page==='signals'&&h(SignalsPage,null),
         page==='buy'&&h(BuyPage,null),
         page==='futures'&&FuturesPage(),

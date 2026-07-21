@@ -718,6 +718,10 @@ function App(){
   var fc=useState(savedFut?savedFut.coin:null);var fCoin=fc[0];var setFCoin=fc[1];
   var fo=useState(false);var fOpen=fo[0];var setFOpen=fo[1];
   var fss=useState(LS.get('futuresSlots')||[]);var futSlots=fss[0];var setFutSlots=fss[1];
+  var actSlot=useState(null);var activeSlotId=actSlot[0];var setActiveSlotId=actSlot[1];
+  var futUp=useState(false);var showUpsell=futUp[0];var setShowUpsell=futUp[1];
+  var futRen=useState(null);var renameSlot=futRen[0];var setRenameSlot=futRen[1];
+  var futRenV=useState('');var renameVal=futRenV[0];var setRenameVal=futRenV[1];
   function saveFutSlots(v){setFutSlots(v);LS.set('futuresSlots',v);}
   useEffect(function(){
     LS.set('futuresLast',{mode:fMode,lev:fLev,ent:fEnt,ex:fEx,inv:fInv,wal:fWal,coin:fCoin});
@@ -974,10 +978,6 @@ function App(){
     var pos=fcalc.pnl>=0;
     var LMARKS=[5,10,15,20,25,50];
     var isProF=LS.get('crypfolio_pro')||false;
-    var activeSlot=useState(null);var activeSlotId=activeSlot[0];var setActiveSlotId=activeSlot[1];
-    var upsell=useState(false);var showUpsell=upsell[0];var setShowUpsell=upsell[1];
-    var rename=useState(null);var renameSlot=rename[0];var setRenameSlot=rename[1];
-    var renameV=useState('');var renameVal=renameV[0];var setRenameVal=renameV[1];
     function loadSlot(s){
       setFMode(s.mode);setFLev(s.lev);setLevInput(String(s.lev));setFEnt(s.ent);setFEx(s.ex);setFInv(s.inv);setFWal(s.wal);setFCoin(s.coin);setActiveSlotId(s.id);
     }
@@ -2692,7 +2692,7 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.0')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v3.1')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),

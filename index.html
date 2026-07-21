@@ -1683,11 +1683,12 @@ function App(){
                 },
                 style:{background:isActive?etf.color+'18':'#1e293b',border:'1px solid '+(isActive?etf.color:etf.color+'30'),borderRadius:12,padding:'8px 10px',textAlign:'center',cursor:'pointer',transition:'all 0.15s'}},
                 h('p',{style:{fontWeight:900,fontSize:12,color:etf.color,marginBottom:1}},etf.ticker),
-                h('p',{style:{fontSize:9,color:'#64748b',marginBottom:3}},etf.name),
+                h('p',{style:{fontSize:9,color:'#64748b',marginBottom:4}},etf.name),
                 priceInFrom
-                  ?h('p',{style:{fontSize:10,fontWeight:700,color:isActive?etf.color:'#f1f5f9'}},
-                      (numAmt||1).toLocaleString('en-US',{maximumFractionDigits:0})+' '+fromCurr+' = '+
-                      (etfAmt||0).toLocaleString('en-US',{maximumFractionDigits:6})+' '+etf.ticker)
+                  ?(function(){
+                      var amtStr=(etfAmt||0).toLocaleString('en-US',{maximumFractionDigits:etfAmt>=100?2:etfAmt>=1?4:6});
+                      return h('p',{style:{fontSize:amtStr.length>10?13:amtStr.length>7?15:18,fontWeight:900,color:isActive?etf.color:'#f1f5f9',lineHeight:1.1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},amtStr);
+                    })()
                   :h('p',{style:{fontSize:10,color:'#334155'}},'—'));
             })),
           /* ETF result panel when one is selected */
@@ -1713,9 +1714,11 @@ function App(){
             var isActive=toCurr===c;
             return h('button',{key:c,onClick:function(){setToCurr(c);},style:{display:'flex',alignItems:'center',gap:8,background:isActive?'rgba(34,211,238,0.12)':'#1e293b',border:isActive?'1px solid rgba(34,211,238,0.4)':'1px solid #334155',borderRadius:11,padding:'9px 12px',cursor:'pointer'}},
               h('span',{style:{fontSize:18,lineHeight:1,flexShrink:0}},FLAGS[c]||'🏳'),
-              h('div',{style:{flex:1,textAlign:'left',minWidth:0}},
-                h('p',{style:{fontWeight:700,fontSize:11,color:isActive?'#22d3ee':'#f1f5f9'}},c),
-                h('p',{style:{fontSize:9,color:'#64748b'}},(numAmt*rate).toLocaleString('en-US',{maximumFractionDigits:2}))));
+              h('span',{style:{fontWeight:700,fontSize:12,color:isActive?'#22d3ee':'#94a3b8',flexShrink:0}},c),
+              (function(){
+                var valStr=(numAmt*rate).toLocaleString('en-US',{maximumFractionDigits:2});
+                return h('span',{style:{flex:1,textAlign:'right',fontWeight:900,fontSize:valStr.length>11?12:valStr.length>8?14:16,color:isActive?'#22d3ee':'#f1f5f9',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},valStr);
+              })());
           })),
         CURRS.length>20&&h('p',{style:{fontSize:11,color:'#475569',textAlign:'center',paddingBottom:4}},'+  '+(CURRS.length-20)+' more — use dropdowns above')),
 
@@ -2502,7 +2505,7 @@ function App(){
     h('div',{style:{flexShrink:0,background:'#0a0f1e',height:'env(safe-area-inset-top,0px)'}}),
     h('div',{style:{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 6px'}},
       h('div',null,
-        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.3')),
+        h('div',{className:'grad',style:{fontSize:22,fontWeight:900,letterSpacing:-0.5}},'Crypfolio'),h('span',{style:{fontSize:9,fontWeight:700,color:'#475569',marginLeft:6,alignSelf:'flex-end',marginBottom:4}},'v2.4')),
       h('div',{style:{display:'flex',gap:6}},
         h('button',{onClick:function(){fetchCoins();fetchNews();},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid #334155',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'refresh',size:14,color:cLoad?'#22d3ee':'#64748b',spin:cLoad})),
         h('button',{onClick:function(){setPage('wallet');},style:{width:34,height:34,borderRadius:10,background:'#1e293b',border:'1px solid rgba(16,185,129,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}},h(Ico,{name:'walletshort',size:15,color:'#10b981'})),
